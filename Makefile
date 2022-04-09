@@ -41,12 +41,13 @@ endif
 
 COMMON = graph.hpp parseCommandLine.hpp utilities.h
 
-all: graph
+all: graph IM
 
 	
 graph: graph.cpp $(COMMON)
 	$(CC) $(CPPFLAGS) graph.cpp -o graph
 
-
+IM: IM.cpp IM.hpp $(COMMON)
+	$(CC) $(CPPFLAGS) IM.cpp -o IM
 clean:
-	rm -f 
+	rm -f graph IM
