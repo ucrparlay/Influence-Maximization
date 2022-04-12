@@ -18,8 +18,10 @@ int main(int argc, char** argv) {
   t1.stop();
 
   cout << "#vertices: " << G.n << " #edges: " << G.m << '\n';
-
-  LDD LDD_P(G);
+  NodeId graph_id = P.getOptionInt("-i",0);
+  float w = P.getOptionDouble("-w", 1.0);
+  Hash_Edge hash_edge{graph_id, false, w};
+  LDD LDD_P(G, hash_edge);
 
   int repeat = P.getOptionInt("-t", (int)3);
   double beta = P.getOptionDouble("-beta", (double)0.2);

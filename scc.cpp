@@ -99,8 +99,11 @@ int main(int argc, char** argv) {
   // size_t* label = new size_t[graph.n];
   sequence<size_t> label = sequence<size_t>(graph.n);
   int repeat = P.getOptionInt("-t", (int)5);
+  NodeId graph_id = P.getOptionInt("-i", 0);
+  float w = P.getOptionDouble("-w", 1);
+  Hash_Edge hash_edge{graph_id, true, w};
   timer t;
-  SCC SCC_P(graph);
+  SCC SCC_P(graph, hash_edge);
   SCC_P.front_thresh = P.getOptionInt("-thresh", 1000000000);
   SCC_P.scc(label, beta, local_reach, local_scc);
   SCC_P.timer_reset();

@@ -35,6 +35,7 @@ struct hash_kv {
 class SCC {
  private:
   Graph& graph;
+  Hash_Edge& hash_edge;
   gbbs::resizable_table<K, V, hash_kv> table_forw;
   gbbs::resizable_table<K, V, hash_kv> table_back;
   hashbag<NodeId> bag;
@@ -73,7 +74,7 @@ class SCC {
   size_t num_round;
   void scc(sequence<size_t>& labels, double beta, bool local1, bool local2);
   SCC() = delete;
-  SCC(Graph& G) : graph(G), bag(G.n) {
+  SCC(Graph& G, Hash_Edge& _hash_edge) : graph(G), hash_edge(_hash_edge),bag(G.n) {
     n = graph.n;
     num_round = 0;
     front = sequence<NodeId>(n);
@@ -217,7 +218,7 @@ int SCC::multi_search(sequence<size_t>& labels,
               head++;
               for (EdgeId j = offset[u]; j < offset[u + 1]; j++) {
                 NodeId v = E[j];
-                if (!(labels[v] & TOP_BIT) && (labels[v] == labels[u])) {
+                if (!(labels[v] & TOP_BIT) && hash_edge(u,v) && (labels[v] == labels[u])) {
                   if (edge_map(u, v, table)) {
                     if (tail < (int)block_size) {
                       Q[tail] = v;
@@ -246,6 +247,7 @@ int SCC::multi_search(sequence<size_t>& labels,
                 [&](size_t j) {
                   NodeId ngb_node = E[offset[node] + j];
                   if (!(labels[ngb_node] & TOP_BIT) &&
+                      hash_edge(node, ngb_node) &&
                       (labels[ngb_node] == labels[node])) {
                     if (edge_map(node, ngb_node, table)) {
                       if (atomic_compare_and_swap(&bits[ngb_node], false,
@@ -343,7 +345,7 @@ void SCC::scc(sequence<size_t>& labels, double beta, bool local_reach,
 #if defined(BREAKDOWN)
   first_round_timer.start();
 #endif
-  REACH REACH_P(graph);
+  REACH REACH_P(graph, hash_edge);
   REACH_P.reach(source, dist_1, local_reach);
   bfs_forward_depth = REACH_P.num_round;
 

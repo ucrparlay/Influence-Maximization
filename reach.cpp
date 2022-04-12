@@ -27,7 +27,12 @@ int main(int argc, char** argv) {
   cout << "read graph finish" << endl;
   cout << "n: " << graph.n << " m: " << graph.m << endl;
 
-  REACH REACH_P(graph);
+  NodeId graph_id = P.getOptionInt("-i",0);
+  float w = P.getOptionDouble("-w", 1.0);
+  bool directed = P.getOption("-d");
+  Hash_Edge hash_edge{graph_id, directed, w};
+
+  REACH REACH_P(graph, hash_edge);
 
   sequence<bool> dst(graph.n);
 

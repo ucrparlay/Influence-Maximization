@@ -513,16 +513,16 @@ Graph read_large_sym_graph(char* filename) {
 struct Hash_Edge {
     NodeId graph_id;
     bool dir;
+    float w;
  
-    bool operator()(NodeId u, NodeId v, float w) const {
+    bool operator()(NodeId u, NodeId v, float _w) const {
         if (dir){
-          return _hash(_hash(u)+v)+_hash(graph_id) < w*UINT_N_MAX;
+          return _hash(_hash(u)+v)+_hash(graph_id) < _w*UINT_N_MAX;
         }else{
-          return _hash(u)+_hash(v)+_hash(graph_id)< w * UINT_N_MAX;
+          return _hash(u)+_hash(v)+_hash(graph_id)< _w * UINT_N_MAX;
         }
     }
     bool operator()(NodeId u, NodeId v) const {
-      float w = 0.1;
         if (dir){
           return _hash(_hash(u)+v)+_hash(graph_id) < w*UINT_N_MAX;
         }else{

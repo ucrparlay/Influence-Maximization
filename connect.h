@@ -36,21 +36,19 @@ NodeId get_max_label(sequence<NodeId> &label) {
 
 tuple<sequence<NodeId>, sequence<pair<NodeId, NodeId>>> connect(
     const Graph &G, double beta,
-    function<bool(NodeId, NodeId)> pred = [](NodeId, NodeId) { return true; },
-    bool spanning_forest = false) {
+    Hash_Edge& hash_edge) {
   timer t;
   timer ti;
   ti.start();
-  LDD ldd_solver(G, pred);
+  LDD ldd_solver(G, hash_edge);
   ti.stop();
 #if defined(DEBUG)
   cout << "initialize ldd_solver time " << ti.get_total() << endl;
 #endif
   t.start();
-  // auto [label, parent] = ldd_solver.ldd(beta, spanning_forest);
   sequence<NodeId> label;
   sequence<NodeId> parent;
-  tie(label, parent) = ldd_solver.ldd(beta, spanning_forest);
+  tie(label, parent) = ldd_solver.ldd(beta);
   // cout << "ldd time " << t.get_total() << " " << '\n';
 
   timer t0;
@@ -67,10 +65,10 @@ tuple<sequence<NodeId>, sequence<pair<NodeId, NodeId>>> connect(
   // TODO: try different hash tables
 
   auto table = gbbs::resizable_table<NodeId, NodeId, hash_kv>();
-  if (spanning_forest) {
-    table = gbbs::resizable_table<NodeId, NodeId, hash_kv>(
-        G.n, {UINT_N_MAX, UINT_N_MAX}, hash_kv());
-  }
+  // if (spanning_forest) {
+  //   table = gbbs::resizable_table<NodeId, NodeId, hash_kv>(
+  //       G.n, {UINT_N_MAX, UINT_N_MAX}, hash_kv());
+  // }
   parallel_for(
       0, G.n,
       [&](NodeId i) {
@@ -79,11 +77,11 @@ tuple<sequence<NodeId>, sequence<pair<NodeId, NodeId>>> connect(
               G.offset[i], G.offset[i + 1],
               [&](size_t j) {
                 NodeId v = G.E[j];
-                if (pred(i, v)) {
+                if (hash_edge(i, v)) {
                   if (unite(i, v, label) != UINT_N_MAX) {
-                    if (spanning_forest) {
-                      table.insert({i, v});
-                    }
+                    // if (spanning_forest) {
+                    //   table.insert({i, v});
+                    // }
                   }
                 }
               },
@@ -97,23 +95,23 @@ tuple<sequence<NodeId>, sequence<pair<NodeId, NodeId>>> connect(
   // auto ret = remove_duplicates_ordered(label, less<NodeId>());
   // printf("# connected components: %zu\n", ret.size());
   sequence<pair<NodeId, NodeId>> tree_edges;
-  if (spanning_forest) {
-    auto ldd_edges = tabulate(G.n, [&](size_t i) {
-      return static_cast<NodeId>(parent[i] == i ? 0 : 1);
-    });
-    auto union_find_edges = table.entries();
-    size_t v1 = scan_inplace(ldd_edges);
-    size_t v2 = union_find_edges.size();
-    tree_edges = sequence<pair<NodeId, NodeId>>(v1 + v2);
-    parallel_for(0, ldd_edges.size(), [&](NodeId i) {
-      if (parent[i] != i) {
-        tree_edges[ldd_edges[i]] = {i, parent[i]};
-      }
-    });
-    parallel_for(0, v2, [&](size_t i) {
-      tree_edges[i + v1] = {get<0>(union_find_edges[i]),
-                            get<1>(union_find_edges[i])};
-    });
-  }
+  // if (spanning_forest) {
+  //   auto ldd_edges = tabulate(G.n, [&](size_t i) {
+  //     return static_cast<NodeId>(parent[i] == i ? 0 : 1);
+  //   });
+  //   auto union_find_edges = table.entries();
+  //   size_t v1 = scan_inplace(ldd_edges);
+  //   size_t v2 = union_find_edges.size();
+  //   tree_edges = sequence<pair<NodeId, NodeId>>(v1 + v2);
+  //   parallel_for(0, ldd_edges.size(), [&](NodeId i) {
+  //     if (parent[i] != i) {
+  //       tree_edges[ldd_edges[i]] = {i, parent[i]};
+  //     }
+  //   });
+  //   parallel_for(0, v2, [&](size_t i) {
+  //     tree_edges[i + v1] = {get<0>(union_find_edges[i]),
+  //                           get<1>(union_find_edges[i])};
+  //   });
+  // }
   return {label, tree_edges};
 }

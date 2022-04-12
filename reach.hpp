@@ -21,6 +21,7 @@ class REACH {
   Graph& graph;
   sequence<NodeId> front;
   hashbag<NodeId> bag;
+  Hash_Edge& hash_edge;
   sequence<bool> dense_front;
   sequence<bool> new_dense;
   bool sparse_pre;
@@ -39,7 +40,7 @@ class REACH {
   void reach_seq(NodeId source, sequence<bool>& dst);
   void reach(NodeId source, sequence<bool>& dst, bool local);
   REACH() = delete;
-  REACH(Graph& G) : graph(G), bag(G.n) {
+  REACH(Graph& G, Hash_Edge& _hash_edge) : graph(G), bag(G.n), hash_edge(_hash_edge) {
     n = graph.n;
     front = sequence<NodeId>(n);
     dense_front = sequence<bool>(n);
@@ -63,7 +64,7 @@ void REACH::reach_seq(NodeId source, sequence<bool>& dst) {
     my_queue.pop();
     for (size_t i = graph.offset[current_node];
          i < graph.offset[current_node + 1]; i++) {
-      if (dst[graph.E[i]] == false) {
+      if (hash_edge(current_node, graph.E[i]) && dst[graph.E[i]] == false) {
         dst[graph.E[i]] = true;
         my_queue.push(graph.E[i]);
       }
@@ -129,7 +130,7 @@ size_t REACH::sparse_update(sequence<bool>& dst, bool local) {
             } else {
               for (size_t j = graph.offset[u]; j < graph.offset[u + 1]; j++) {
                 NodeId v = graph.E[j];
-                if (dst[v] == false) {
+                if (hash_edge(u,v) && dst[v] == false) {
                   if (compare_and_swap(&dst[v], false, true)) {
                     if (tail < block_size) {
                       local_queue[tail++] = v;
@@ -149,7 +150,7 @@ size_t REACH::sparse_update(sequence<bool>& dst, bool local) {
               graph.offset[node], graph.offset[node + 1],
               [&](size_t j) {
                 NodeId v = graph.E[j];
-                if (dst[v] == false) {
+                if (hash_edge(node,v) && dst[v] == false) {
                   if (compare_and_swap(&dst[v], false, true)) {
                     bag.insert(v);
                   }
@@ -168,7 +169,7 @@ size_t REACH::dense_update(sequence<bool>& dst) {
     if (dst[i] == false) {
       for (size_t j = graph.in_offset[i]; j < graph.in_offset[i + 1]; j++) {
         NodeId ngb_node = graph.in_E[j];
-        if (dense_front[ngb_node]) {
+        if (hash_edge(ngb_node, i) && dense_front[ngb_node]) {
           dst[i] = true;
           new_dense[i] = true;
           break;

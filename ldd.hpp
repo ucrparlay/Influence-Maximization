@@ -24,7 +24,7 @@ class LDD {
   bool sparse_pre;
   size_t frontier_size;
   size_t threshold;
-  function<bool(NodeId, NodeId)> pred;
+  Hash_Edge& hash_edge;
   size_t sparse_update(sequence<NodeId>& label, sequence<NodeId>& parent);
   size_t dense_update(sequence<NodeId>& label, sequence<NodeId>& parent);
   EdgeId dense_sample(NodeId rand_seed);
@@ -38,9 +38,8 @@ class LDD {
   size_t num_round;
   LDD() = delete;
   LDD(
-      const Graph& _G, function<bool(NodeId, NodeId)> _pred =
-                           [](NodeId, NodeId) { return true; })
-      : G(_G), bag(G.n), pred(_pred) {
+      const Graph& _G, Hash_Edge& _hash_edge)
+      : G(_G), bag(G.n), hash_edge(_hash_edge) {
     front = sequence<NodeId>(G.n);
     in_frontier = sequence<bool>(G.n);
     in_next_frontier = sequence<bool>(G.n);
@@ -101,7 +100,7 @@ size_t LDD::sparse_update(sequence<NodeId>& label, sequence<NodeId>& parent) {
               G.offset[f], G.offset[f + 1],
               [&](size_t j) {
                 NodeId v = G.E[j];
-                if (pred(f, v)) {
+                if (hash_edge(f, v)) {
                   if (compare_and_swap(&label[v], UINT_N_MAX, label[f])) {
                     if (parent.size()) {
                       parent[v] = f;
@@ -128,7 +127,7 @@ size_t LDD::sparse_update(sequence<NodeId>& label, sequence<NodeId>& parent) {
 #endif
               for (size_t j = G.offset[u]; j < G.offset[u + 1]; j++) {
                 NodeId v = G.E[j];
-                if (pred(u, v)) {
+                if (hash_edge(u, v)) {
                   if (compare_and_swap(&label[v], UINT_N_MAX, label[u])) {
                     if (parent.size()) {
                       parent[v] = u;
@@ -216,7 +215,7 @@ size_t LDD::dense_update(sequence<NodeId>& label, sequence<NodeId>& parent) {
           //});
           for (size_t j = offset[i]; j < offset[i + 1]; j++) {
             NodeId v = E[j];
-            if (pred(i, v)) {
+            if (hash_edge(i, v)) {
               if (in_frontier[v]) {
                 if (parent.size()) {
                   parent[i] = v;
