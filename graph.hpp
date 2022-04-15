@@ -621,3 +621,58 @@ struct Hash_Edge {
     }
 };
 
+
+void AssignUniWeight(Graph& graph, float w){
+  graph.W = sequence<float>(graph.m);
+  parallel_for(0, graph.m, [&](size_t i){
+    graph.W[i] = w;
+  });
+  if (!graph.symmetric){
+    graph.in_W = sequence<float>(graph.m);
+    parallel_for(0, graph.m, [&](size_t i){
+      graph.in_W[i]=w;
+    });
+  }
+}
+
+void AssignIndegreeWeightSym(Graph &graph){
+  graph.W = sequence<float>(graph.m);
+  parallel_for(0, graph.n, [&](size_t i){
+    EdgeId in_degree = graph.offset[i+1] - graph.offset[i];
+    if (in_degree >0){
+      float w = 1.0/in_degree;
+      parallel_for(graph.offset[i],graph.offset[i+1],[&](size_t j){
+        graph.W[j] = w;
+      });
+    }
+  });
+}
+
+void AssignIndegreeWeightDir(Graph &graph){
+  graph.in_W = sequence<float>(graph.m);
+  graph.W = sequence<float>(graph.m);
+  sequence<tuple<edge,float>> edge_list = sequence<tuple<edge,float>>(graph.m);
+  parallel_for(0, graph.n, [&](size_t i){
+    EdgeId in_degree = graph.in_offset[i+1] - graph.in_offset[i];
+    if (in_degree >0){
+      float w = 1.0/in_degree;
+      parallel_for(graph.in_offset[i], graph.in_offset[i+1], [&](size_t j){
+        graph.in_W[j]=w;
+        NodeId u = graph.in_E[j];
+        edge_list[j] = make_tuple(edge(u,i),w);
+      });
+    }
+  });
+  sort_inplace(edge_list);
+  parallel_for(0,graph.m, [&](size_t i){
+    graph.W[i]=get<1>(edge_list[i]);
+  });
+}
+
+void AssignIndegreeWeight(Graph &graph){
+  if (graph.symmetric){
+    AssignIndegreeWeightSym(graph);
+  }else{
+    AssignIndegreeWeightDir(graph);
+  }
+}
