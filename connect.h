@@ -34,7 +34,8 @@ NodeId get_max_label(sequence<NodeId> &label) {
   return max_label;
 }
 
-tuple<sequence<NodeId>, sequence<pair<NodeId, NodeId>>> connect(
+// tuple<sequence<NodeId>, sequence<pair<NodeId, NodeId>>> connect(
+sequence<NodeId> connect(
     const Graph &G, double beta,
     Hash_Edge& hash_edge) {
   timer t;
@@ -94,7 +95,8 @@ tuple<sequence<NodeId>, sequence<pair<NodeId, NodeId>>> connect(
   t2.stop();
   // auto ret = remove_duplicates_ordered(label, less<NodeId>());
   // printf("# connected components: %zu\n", ret.size());
-  sequence<pair<NodeId, NodeId>> tree_edges;
+
+  // sequence<pair<NodeId, NodeId>> tree_edges;
   // if (spanning_forest) {
   //   auto ldd_edges = tabulate(G.n, [&](size_t i) {
   //     return static_cast<NodeId>(parent[i] == i ? 0 : 1);
@@ -113,5 +115,16 @@ tuple<sequence<NodeId>, sequence<pair<NodeId, NodeId>>> connect(
   //                           get<1>(union_find_edges[i])};
   //   });
   // }
-  return {label, tree_edges};
+  // return {label, tree_edges};
+  return label;
 }
+
+
+// sequence<NodeId> union_find( const Graph &G, Hash_Edge& hash_edge){
+//   auto find = gbbs::find_variants::find_compress;
+//   auto splice = gbbs::splice_variants::split_atomic_one;
+//   auto unite =
+//         gbbs::unite_variants::UniteRemCAS<decltype(splice), decltype(find),
+//                                         find_atomic_halve>(find, splice);
+  
+// }

@@ -119,6 +119,7 @@ int main(int argc, char** argv) {
   SCC_P.breakdown_report(repeat);
 #endif
   if (P.getOption("-status")) SCC_status(label, graph.n);
+  if (P.getOption("-print")) output_component_sizes(label, graph.n);
 
   return 0;
 }

@@ -127,3 +127,19 @@ inline ET _hash_2(ET a) {
     abort();
   }
 }
+
+template<class T>
+void output_component_sizes(sequence<T> label, size_t n){
+  sequence<T> cnt;
+  cnt = sequence<T>(n);
+  parallel_for(0, n, [&](size_t i){cnt[i] =0;});
+  parallel_for(0, n, [&](size_t i){
+    T id = label[i];
+    fetch_and_add(&cnt[id],1);
+  });
+  for (size_t i = 0; i<n; i++){
+    if (cnt[i] > 0){
+      cout << cnt[i] << endl; 
+    }
+  }
+}

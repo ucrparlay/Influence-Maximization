@@ -13,6 +13,7 @@
 
 #include <fstream>
 #include <vector>
+#include <map>
 
 #include "utilities.h"
 using namespace std;
@@ -247,33 +248,7 @@ void make_directed(Graph& graph) {
   });
 }
 
-void read_knn(const char* const fileName, const char* const OutFileName,
-              int k) {
-  ifstream file(fileName, ifstream::in | ifstream::binary | ifstream::ate);
-  // if (!file.is_open()) {
-  //   cerr << "Error: Cannot open file " << fileName << '\n';
-  //   abort();
-  // }
-  // NodeId a, b;
-  // vector<edge> out_list;
-  // while (file >> a >> b)
-  // {
-  //   cout << a << "," << b << endl;
-  //   out_list.push_back(edge(a,b));
-  // }
-  // file.close();
-  if (!file.is_open()) {
-    cerr << "Error: Cannot open file " << fileName << '\n';
-    abort();
-  }
-  long end = file.tellg();
-  file.seekg(0, file.beg);
-  long length = end - file.tellg();
-
-  sequence<char> strings(length + 1);
-  file.read(strings.begin(), length);
-  file.close();
-
+sequence<edge> StringToEdgeList(sequence<char> strings, long length){
   sequence<bool> flag(length);
   parallel_for(0, length, [&](size_t i) {
     if (is_space(strings[i])) {
@@ -293,24 +268,57 @@ void read_knn(const char* const fileName, const char* const OutFileName,
   sequence<char*> words(offset_seq.size());
   parallel_for(0, offset_seq.size(),
                [&](size_t i) { words[i] = strings.begin() + offset_seq[i]; });
-
-  Graph graph;
-  size_t m = offset_seq.size() / 2;
-  size_t n = m / k;
-  graph.n = n;
-  graph.m = m;
-  cout << "n " << n << endl;
-  cout << "m " << m << endl;
+  
+  EdgeId m = words.size()/2;
   sequence<edge> edge_list = sequence<edge>(m);
   parallel_for(0, m, [&](size_t i) {
     NodeId u = atol(words[2 * i]);
     NodeId v = atol(words[2 * i + 1]);
     edge_list[i] = edge(u, v);
   });
+  return edge_list;
+}
+
+Graph EdgeListToGraph(sequence<edge> edge_list, NodeId n){
+  EdgeId m = edge_list.size();
+  bool reorder = false;
+  for (long i = edge_list.size()-1; i >= 0; i--){
+    NodeId u = edge_list[i].u;
+    NodeId v = edge_list[i].v;
+    if (u >= n || v >= n){
+      reorder = true;
+      break;
+    }
+  }
+  if (reorder){
+    cout << "Vertices need remapping" << endl;
+    std::map<NodeId, NodeId> V_map;
+    NodeId v_cnt = 0;
+    for (size_t i = 0; i<m; i++){
+      NodeId u = edge_list[i].u;
+      NodeId v = edge_list[i].v;
+      if (V_map.find(u)==V_map.end()){
+        V_map[u]=v_cnt;
+        v_cnt++;
+      }
+      if (V_map.find(v)==V_map.end()){
+        V_map[v]=v_cnt;
+        v_cnt++;
+      }
+    }
+    sequence<edge> new_edgelist = sequence<edge>(m);
+    parallel_for(0,m,[&](size_t i){
+      NodeId u = edge_list[i].u;
+      NodeId v = edge_list[i].v;
+      new_edgelist[i] = edge(V_map[u], V_map[v]);
+    });
+    edge_list = new_edgelist;
+  }
   sort_inplace(edge_list);
-  // for (size_t i = 0; i<m; i++){
-  //   cout << edge_list[i].u << ", " << edge_list[i].v << endl;
-  // }
+
+  Graph graph;
+  graph.n = n;
+  graph.m = m;
 
   graph.offset = sequence<EdgeId>(graph.n + 1);
   graph.E = sequence<NodeId>(graph.m);
@@ -327,16 +335,34 @@ void read_knn(const char* const fileName, const char* const OutFileName,
       parallel_for(u + 1, end, [&](size_t j) { graph.offset[j] = i + 1; });
     }
   });
-  // cout << "offset"<< endl;
-  // for (int i = 0; i<10; i++){
-  //   cout << graph.offset[i] << endl;
-  // }
-  // cout << "E" << endl;
-  // for (int i = 0; i<10; i++){
-  //   cout << graph.E[i] <<endl;
-  // }
+
+  return graph;
+}
+
+
+void read_knn(const char* const fileName, const char* const OutFileName,
+              int k) {
+  ifstream file(fileName, ifstream::in | ifstream::binary | ifstream::ate);
+  if (!file.is_open()) {
+    cerr << "Error: Cannot open file " << fileName << '\n';
+    abort();
+  }
+  long end = file.tellg();
+  file.seekg(0, file.beg);
+  long length = end - file.tellg();
+
+  sequence<char> strings(length + 1);
+  file.read(strings.begin(), length);
+  file.close();
+  auto edge_list = StringToEdgeList(strings, length);
+  size_t m = edge_list.size();
+  size_t n = m / k;
+  Graph graph = EdgeListToGraph(edge_list, n);
+
   std::string out_name = OutFileName;
   out_name += ".bin";  // C++11 for std::to_string   ofstream ofs(fileName);
+  cout << "write to file "<<out_name << endl;
+  cout <<"n: " << graph.n << " m: " << graph.m << endl;
   ofstream ofs(out_name);
   size_t sizes = (graph.n + 1) * 8 + graph.m * 4 + 3 * 8;
   ofs.write(reinterpret_cast<char*>(&graph.n), sizeof(size_t));
@@ -345,17 +371,81 @@ void read_knn(const char* const fileName, const char* const OutFileName,
   ofs.write(reinterpret_cast<char*>((graph.offset).data()), (graph.n + 1) * 8);
   ofs.write(reinterpret_cast<char*>((graph.E).data()), graph.m * 4);
   ofs.close();
+
   // symmetric graph
   make_symmetric(graph);
   out_name = OutFileName;
   out_name += "_sym.bin";  // C++11 for std::to_string   ofstream ofs(fileName);
+  cout << "output to file " << out_name << endl;
+  cout << "n: " << n << " m: " << m << endl;
   ofstream ofs_sym(out_name);
   sizes = (graph.n + 1) * 8 + graph.m * 4 + 3 * 8;
   ofs_sym.write(reinterpret_cast<char*>(&graph.n), sizeof(size_t));
   ofs_sym.write(reinterpret_cast<char*>(&graph.m), sizeof(size_t));
   ofs_sym.write(reinterpret_cast<char*>(&sizes), sizeof(size_t));
-  ofs_sym.write(reinterpret_cast<char*>((graph.offset).data()),
-                (graph.n + 1) * 8);
+  ofs_sym.write(reinterpret_cast<char*>((graph.offset).data()),(graph.n + 1) * 8);
+  ofs_sym.write(reinterpret_cast<char*>((graph.E).data()), graph.m * 4);
+  ofs_sym.close();
+}
+
+void read_txt(const char* const fileName, const char* const OutFileName, NodeId n){
+  ifstream file(fileName, ifstream::in | ifstream::binary | ifstream::ate);
+  
+  if (!file.is_open()) {
+    cerr << "Error: Cannot open file " << fileName << '\n';
+    abort();
+  }
+  long end = file.tellg();
+  file.seekg(0, file.beg);
+  // ignore lines begin with #
+  long begin = file.tellg();
+	while (!file.eof()) {
+    string line;
+	  getline(file,line);
+	  if (line[0] == '#'){
+      // cout << line << endl;
+      begin = file.tellg();
+    }
+	  else{
+      file.seekg(begin, file.beg);
+      break;
+    }
+	}
+  long length = end - begin;
+  sequence<char> strings(length+1);
+  file.read(strings.begin(), length);
+  file.close();
+  auto edge_list = StringToEdgeList(strings, length);
+  Graph graph = EdgeListToGraph(edge_list, n);
+  
+
+  string out_name = OutFileName;
+  out_name+=".bin";
+  cout << "write to " << out_name << endl;
+  cout << "n: " << graph.n << " m: " << graph.m << endl;
+  ofstream ofs(out_name);
+  size_t sizes = (graph.n + 1) * 8 + graph.m * 4 + 3 * 8;
+  ofs.write(reinterpret_cast<char*>(&graph.n), sizeof(size_t));
+  ofs.write(reinterpret_cast<char*>(&graph.m), sizeof(size_t));
+  ofs.write(reinterpret_cast<char*>(&sizes), sizeof(size_t));
+  ofs.write(reinterpret_cast<char*>((graph.offset).data()), (graph.n + 1) * 8);
+  ofs.write(reinterpret_cast<char*>((graph.E).data()), graph.m * 4);
+  ofs.close();
+
+
+  
+  // symmetric graph
+  make_symmetric(graph);
+  out_name = OutFileName;
+  out_name += "_sym.bin";  // C++11 for std::to_string   ofstream ofs(fileName);
+  cout << "write to " << out_name << endl;
+  cout << "n: "<< graph.n << " m: " << graph.m << endl;
+  ofstream ofs_sym(out_name);
+  sizes = (graph.n + 1) * 8 + graph.m * 4 + 3 * 8;
+  ofs_sym.write(reinterpret_cast<char*>(&graph.n), sizeof(size_t));
+  ofs_sym.write(reinterpret_cast<char*>(&graph.m), sizeof(size_t));
+  ofs_sym.write(reinterpret_cast<char*>(&sizes), sizeof(size_t));
+  ofs_sym.write(reinterpret_cast<char*>((graph.offset).data()),(graph.n + 1) * 8);
   ofs_sym.write(reinterpret_cast<char*>((graph.E).data()), graph.m * 4);
   ofs_sym.close();
 }

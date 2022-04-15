@@ -28,16 +28,18 @@ int main(int argc, char** argv) {
   int repeat = P.getOptionInt("-t", (int)10);
   double beta = P.getOptionDouble("-beta", (double)0.2);
   timer t;
-  connect(G, beta, hash_edge);
+  sequence<NodeId> label;
+  label = connect(G, beta, hash_edge);
   // ofstream ofs("connectivity.dat", ios_base::app);
   for (int i = 0; i < repeat; i++) {
     t.start();
-    connect(G, beta, hash_edge);
+    label = connect(G, beta, hash_edge);
     double time = t.stop();
     // ofs << time << '\n';
     cout << "connect_cost: " << time << " " << endl;
   }
   cout << "average_time: " << t.get_total() / repeat << " " << endl;
+  if (P.getOption("-print")) output_component_sizes(label, G.n);
   // ofs.close();
   return 0;
 }

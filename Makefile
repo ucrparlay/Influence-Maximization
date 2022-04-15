@@ -50,7 +50,7 @@ graph: graph.cpp $(COMMON)
 IM: IM.cpp IM.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) IM.cpp -o IM
 
-connect: connect.h connect.cpp ldd.hpp 
+connect: connect.h connect.cpp ldd.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) connect.cpp -o connect
 
 bfs: bfs.cpp bfs.hpp $(COMMON)
