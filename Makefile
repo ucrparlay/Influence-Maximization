@@ -41,7 +41,7 @@ endif
 
 COMMON = graph.hpp parseCommandLine.hpp utilities.h get_time.hpp
 
-all: graph IM  connect bfs scc reach 
+all: graph IM union_find
 
 	
 graph: graph.cpp $(COMMON)
@@ -50,17 +50,20 @@ graph: graph.cpp $(COMMON)
 IM: IM.cpp IM.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) IM.cpp -o IM
 
-connect: connect.h connect.cpp ldd.hpp $(COMMON)
-	$(CC) $(CPPFLAGS) connect.cpp -o connect
+# connect: connect.h connect.cpp ldd.hpp $(COMMON)
+# 	$(CC) $(CPPFLAGS) connect.cpp -o connect
 
-bfs: bfs.cpp bfs.hpp $(COMMON)
-	$(CC) $(CPPFLAGS) bfs.cpp -o bfs
+# bfs: bfs.cpp bfs.hpp $(COMMON)
+# 	$(CC) $(CPPFLAGS) bfs.cpp -o bfs
 
-scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp
-	$(CC) $(CPPFLAGS) scc.cpp -o scc
+# scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp
+# 	$(CC) $(CPPFLAGS) scc.cpp -o scc
 
-reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
-	$(CC) $(CPPFLAGS) reach.cpp -o reach
+# reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
+# 	$(CC) $(CPPFLAGS) reach.cpp -o reach
+
+union_find: union_find.cpp union_find.hpp $(COMMON)
+	$(CC) $(CPPFLAGS) union_find.cpp -o union_find
 
 clean:
-	rm -f graph IM
+	rm -f graph IM union_find

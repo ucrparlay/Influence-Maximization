@@ -136,59 +136,6 @@ struct Unite {
   }
 };
 
-// template <class Splice, class Compress, FindOption find_option>
-// struct UniteRemLock {
-//   NodeId n;
-//   pbbs::sequence<bool> locks;
-//   Compress& compress;
-//   Splice& splice;
-//   UniteRemLock(Compress& compress, Splice& splice, NodeId n) : n(n),
-//   compress(compress), splice(splice) {
-//     locks = pbbs::sequence<bool>(n, false);
-//   }
-
-//   inline void fence() {
-//     std::atomic_thread_fence(std::memory_order_seq_cst);
-//   }
-
-//   bool acquire_lock(NodeId u) {
-//     if (!locks[u] && pbbs::atomic_compare_and_swap(&locks[u], false, true)) {
-//       return true;
-//     }
-//     return false;
-//   }
-
-//   void release_lock(NodeId u) {
-//     locks[u] = false;
-//   }
-
-//   inline NodeId operator()(NodeId u_orig, NodeId v_orig,
-//   pbbs::sequence<parent>& parents) {
-//     parent rx = u_orig;
-//     parent ry = v_orig;
-//     while (parents[rx] != parents[ry]) {
-//       /* link from high -> low */
-//       if (parents[rx] < parents[ry]) std::swap(rx,ry);
-//       if (rx == parents[rx]) {
-//         if (acquire_lock(rx)) {
-//           parent py = parents[ry];
-//           if (rx == parents[rx] && rx > py) {
-//             parents[rx] = py;
-//           }
-//           release_lock(rx);
-//         }
-//         /* link high -> low */
-//       } else {
-//         rx = splice(rx, ry, parents);
-//       }
-//     }
-//     if constexpr (find_option != find_naive) { /* aka find_none */
-//       compress(u_orig, parents);
-//       compress(v_orig, parents);
-//     }
-//     return UINT_N_MAX;  // TODO (ret-value)
-//   }
-// };
 
 template <class Splice, class Compress, FindOption find_option>
 struct UniteRemCAS {
@@ -250,34 +197,6 @@ struct UniteEarly {
     return ret;
   }
 };
-
-// template <class Find>
-// struct UniteND {
-//   Find find;
-//   pbbs::sequence<NodeId> hooks;
-//   UniteND(size_t n, Find& find) : find(find) {
-//     hooks = pbbs::sequence<NodeId>(n, UINT_N_MAX);
-//   }
-
-//   inline NodeId operator()(NodeId u_orig, NodeId v_orig,
-//   pbbs::sequence<parent>& parents) {
-//     parent u = u_orig;
-//     parent v = v_orig;
-//     while(1) {
-//       u = find(u,parents);
-//       v = find(v,parents);
-//       if(u == v) break;
-//       /* link high -> low */
-//       if(u < v) std::swap(u,v);
-//       if (hooks[u] == UINT_N_MAX && pbbs::atomic_compare_and_swap(&hooks[u],
-//       UINT_N_MAX,v)) {
-//         parents[u] = v;
-//         return u;
-//       }
-//     }
-//     return UINT_N_MAX;
-//   }
-// };
 
 }  // namespace unite_variants
 }  // namespace gbbs

@@ -120,11 +120,15 @@ sequence<NodeId> connect(
 }
 
 
-// sequence<NodeId> union_find( const Graph &G, Hash_Edge& hash_edge){
-//   auto find = gbbs::find_variants::find_compress;
-//   auto splice = gbbs::splice_variants::split_atomic_one;
-//   auto unite =
-//         gbbs::unite_variants::UniteRemCAS<decltype(splice), decltype(find),
-//                                         find_atomic_halve>(find, splice);
-  
+
+
+// sequence<size_t> union_find2(const Graph &G, Hash_Edge& hash_edge){
+//   auto find = ucrparlay::find_compress;
+//   auto splice = ucrparlay::split_atomic_one;
+//   auto unite = ucrparlay::UniteRemCAS<decltype(splice), decltype(find)>(find, splice);
+//   sequence<size_t> label = sequence<size_t>(graph.n);
+//   parallel_for(0, graph.n, [&](size_t i){
+//     label[i] = 1 | ucrparlay::TOP_BIT;
+//   });
+//   para
 // }
