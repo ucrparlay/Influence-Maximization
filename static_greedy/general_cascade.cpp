@@ -24,7 +24,7 @@ void GeneralCascade::Build()
   built = true;
 }
 
-void GeneralCascade::SetTarget(int size, int set[])
+void GeneralCascade::SetTarget(int size, vector<int>& set)
 {
   if (!built) Build();
   targetSize = size;
@@ -33,7 +33,7 @@ void GeneralCascade::SetTarget(int size, int set[])
   resultSize = 0;
 }
 
-double GeneralCascade::Run(int num_iter, int size, int set[])
+double GeneralCascade::Run(int num_iter, int size, vector<int>& set)
 {
   SetTarget(size, set);
 

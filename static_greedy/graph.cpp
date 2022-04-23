@@ -567,14 +567,17 @@ void Graph::BuildFromFile2GIC(char *file){
 }
 
 
-void Graph::BuildFromFile2UC(char *file, double p){
+void Graph::BuildFromFile2UC(outside_graph::Graph& my_graph, double p){
   
   if (built) 
     return;
   built = true;
 
-  FILE* in = fopen(file, "r");
-  fscanf(in,"%d %d", &n, &m);  
+  // FILE* in = fopen(file, "r");
+  // fscanf(in,"%d %d", &n, &m);  
+  n = my_graph.n;
+  m = my_graph.m;
+  cout << "BuildFromFile2UC " << n << " " << m << endl;
 
   degree.resize(n);
   indegree.resize(n);
@@ -582,9 +585,19 @@ void Graph::BuildFromFile2UC(char *file, double p){
   edges.resize(2*m);
   correspond.resize(2*m);
 
+  int cnt = 0;
+  for (int i = 0; i < n; i++) {
+    for (int j = my_graph.offset[i]; j < my_graph.offset[i + 1]; j++) {
+      edges[cnt].u = i;
+      edges[cnt].v = my_graph.E[j];
+      cnt++;
+    }
+  }
+  assert(cnt == m);
+
   for (int i=0; i<m; i++)
   {
-    fscanf(in,"%d %d", &edges[i].u, &edges[i].v);
+    // fscanf(in,"%d %d", &edges[i].u, &edges[i].v);
     edges[i].w1 = 0;
     edges[i].w2 = -1.0;
     edges[i+m].u = edges[i].v;
@@ -605,7 +618,10 @@ void Graph::BuildFromFile2UC(char *file, double p){
 
   qsort_edges(0, 2*m-1);
 
-  int newlocation[MAX_EDGE] = {0};
+  // int newlocation[MAX_EDGE] = {0};
+  vector<int> newlocation(MAX_EDGE);
+  newlocation[0] = 0;
+
   int m1 = 0;
   for (int i=1; i<2*m; i++)
   {

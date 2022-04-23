@@ -2,6 +2,7 @@
 #define GRAPH_H
 
 #include "limit.h"
+#include "outside_graph.hpp"
 #include <vector>
 
 using namespace std;
@@ -45,7 +46,7 @@ public:
   static void BuildFromFile2DWC(char *file); //directed graph + wic
   static void BuildFromFile2DUC(char *file, double p);//directed graph + uic
   static void BuildFromFile2WC(char *file);// undirected graph + wic
-  static void BuildFromFile2UC(char *file, double p);//undirected graph + uic
+  static void BuildFromFile2UC(outside_graph::Graph& graph, double p);//undirected graph + uic
   static void sortEdges();
   static void Stats();
 };

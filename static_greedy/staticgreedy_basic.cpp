@@ -60,7 +60,9 @@ void BasicStaticGreedy::qsort_edges(int h, int t)
 void BasicStaticGreedy::GenerateSnapshot(BasicSnapshot* snapshots, int R)
 {
   //Generate R Snapshots
-  bool forward[MAX_EDGE] = {false};
+  // bool forward[MAX_EDGE] = {false};
+  vector<bool> forward(MAX_EDGE);
+  forward[0] = false;
   int* corresponding_temp = (int*)malloc(sizeof(int)*m);//record all the new location
 
   for (int yy=0; yy<R; yy++)
@@ -122,16 +124,19 @@ int* BasicStaticGreedy::GetSeeds(int R, int k)
   //top = SET_SIZE;
   top = k;
 
-  bool *used= new bool[n];
-  memset(used, 0, sizeof(bool)*n);
+  // bool *used= new bool[n];
+  // memset(used, 0, sizeof(bool)*n);
+  vector<bool> used(n);
   //int set[SET_SIZE];
   int set[MAX_K];
 
   double old = 0.0;
 
-  double *improve=new double[n];
-  int *lastupdate=new int[n];
-  int *heap=new int[n];
+  // double *improve=new double[n];
+  // int *lastupdate=new int[n];
+  // int *heap=new int[n];
+  vector<double> improve(n);
+  vector<int> lastupdate(n), heap(n);
 
   for (int i=0; i<n; i++)
   {
@@ -143,14 +148,20 @@ int* BasicStaticGreedy::GetSeeds(int R, int k)
   BasicSnapshot* snapshots = (BasicSnapshot*)malloc(sizeof(BasicSnapshot)*R);
   
   //generate G'i by removing each edge e=(u, v) from G with probability 1-p(u, v)
+  cout << "start generating snapshots" << endl;
   GenerateSnapshot(snapshots, R);
+  cout << "snapshots generated!" << endl;
 
   for (int i=0; i<top; i++)
   {
+    cout << "i: " << i << endl;
     int ccc = 0;
 
+    int cnt = 0;
     while (lastupdate[heap[0]] != i)
     {
+      cnt++;
+      if (cnt % 10000 == 0) cout << "cnt: " << cnt << endl;
       ccc++;
       lastupdate[heap[0]] = i;
       set[i] = heap[0];
@@ -199,16 +210,18 @@ int* BasicStaticGreedy::GetSeeds(int R, int k)
     }
   }
 
-  delete[] heap;
-  delete[] lastupdate;
-  delete[] improve;
-  delete[] used;
+  // delete[] heap;
+  // delete[] lastupdate;
+  // delete[] improve;
+  // delete[] used;
 
   for(int bb=0; bb<R; bb++){
     free(snapshots[bb].edges);
     free(snapshots[bb].index);  
   }
   free(snapshots);
+
+  cout << "BasicStaticGreedy::GetSeeds done." << endl;
 
   return list;
 }
@@ -225,13 +238,14 @@ double BasicStaticGreedy::GetInfluenceSpreadFromSnapshot(int R, int set_num, int
   resultSize = 0;
 
   int    h, t;
-  int    *list  = new int[n];
-  bool  *active= new bool[n];
+  // int    *list  = new int[n];
+  // bool  *active= new bool[n];
 
   for (int it=0; it<R; it++)
   {
+    vector<int> list(n);
+    vector<bool> active(n);
     int temp = 0;
-    memset(active, 0, sizeof(bool)*n);
     for (int i=0; i<targetSize; i++) 
     {
       list[i] = target[i];
@@ -271,8 +285,8 @@ double BasicStaticGreedy::GetInfluenceSpreadFromSnapshot(int R, int set_num, int
       h++;
     }
   }
-  delete[] active;
-  delete[] list;
+  // delete[] active;
+  // delete[] list;
   
   double mean = (double)resultSize / (double)R;
   return mean;

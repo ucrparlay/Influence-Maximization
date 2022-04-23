@@ -1,8 +1,8 @@
 #ifndef LIMIT_H
 #define LIMIT_H
 
-#define MAX_NODE	50000
-#define	MAX_EDGE	1000000
+#define MAX_NODE	5000000
+#define	MAX_EDGE	10000000
 #define MAX_K		1000
 
 #define STR_LEN		200

@@ -1,5 +1,6 @@
 #include "limit.h"
 #include "graph.h"
+#include "outside_graph.hpp"
 #include "staticgreedy.h"
 #include "general_cascade.h"
 #include "staticgreedy_directed_new.h"
@@ -20,9 +21,10 @@
 
 using namespace std;
 
-double toSimulateOnce(int *seeds, int set_size, double (*Run)(int num_iter, int size, int set[]))
+template<typename Run>
+double toSimulateOnce(int *seeds, int set_size, Run run)
 {
-  int set[MAX_NODE];
+  vector<int> set(MAX_NODE);
   int t;
 
   for (t = 0; t < set_size; t++)
@@ -30,7 +32,7 @@ double toSimulateOnce(int *seeds, int set_size, double (*Run)(int num_iter, int 
     set[t] = seeds[t];
   }
 
-  return Run(10000, t, set);
+  return run(100, t, set);
 }
 
 
@@ -57,8 +59,11 @@ int main(int argc, char * argv[])
   string algo = argv[4];
 
   //build graph
-  Graph::BuildFromFile2GIC(file_path);
+  auto my_graph = outside_graph::TTT::read_graph(file_path);
+  cout << "my_graph: " << my_graph.n << " " << my_graph.m << endl;
+  Graph::BuildFromFile2UC(my_graph, 0.1);
   GeneralCascade::Build();
+  cout << "Graph: " << Graph::GetN() << " " << Graph::GetM() << endl;
 
   char outfile[100];
   long time;

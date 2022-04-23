@@ -15,8 +15,8 @@ private:
 	
 public:
 	static void Build();
-	static void SetTarget(int size, int set[]);
-	static double Run(int num_iter, int size, int set[]);
+	static void SetTarget(int size, std::vector<int>& set);
+	static double Run(int num_iter, int size, std::vector<int>& set);
 	static double mean;
 	static double var;
 	static double std;
