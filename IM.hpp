@@ -3,6 +3,7 @@
 
 #include "graph.hpp"
 #include "union_find.hpp"
+#include "get_time.hpp"
 using namespace std;
 using namespace parlay;
 
@@ -21,51 +22,64 @@ public:
         n = G.n;
         m = G.m;
     }
-    sequence<size_t> connect(size_t sketch_id);
-    void init_sketches(size_t R);
-    // sequence<NodeId> seeds(int k, size_t R);
+    void init_sketches(size_t R, bool parallel);
+    pair<sequence<NodeId>, float> select_seeds(int k, size_t R);
 };
 
 
 
-sequence<size_t> InfluenceMaximizer::connect(size_t sketch_id){
-    Hash_Edge hash_edge;
-    hash_edge.graph_id=sketch_id;
-    auto label = union_find(G, hash_edge);
-    return label;
-};
 
-void InfluenceMaximizer::init_sketches(size_t R){
+void InfluenceMaximizer::init_sketches(size_t R, bool parallel){
     skeches = sequence<sequence<size_t>>(R);
-    parallel_for(0, R, [&](size_t i){
-        skeches[i]=connect(i);
-    });
+    if (parallel){
+        parallel_for(0, R, [&](size_t i){
+            Hash_Edge hash_edge;
+            hash_edge.graph_id = i;
+            skeches[i]=union_find(G, hash_edge);
+        });
+    }else{
+        for (size_t i = 0; i<R; i++){
+            Hash_Edge hash_edge;
+            hash_edge.graph_id = i;
+            skeches[i] = union_find(G, hash_edge);
+        }
+    }
 }
 
-// sequence<NodeId> InfluenceMaximizer::seeds(int k, size_t R){
-//     sequence<NodeId> select_seeds(k);
-//     init_sketches(R);
-//     for (int t = 0; t<k; t++){
-//         float max_influence=0;
-//         NodeId seed=UINT_N_MAX; 
-//         for (NodeId v = 0; v<G.n; v++){
-//             float gain=0;
-//             for (size_t r = 0; r<R; r++){
-//                 NodeId label = skeches[r].label[v];
-//                 gain+=skeches[r].size[label];
-//             }
-//             gain = gain/R;
-//             if (gain>max_influence){
-//                 max_influence = gain;
-//                 seed = v;
-//             }
-//         }
-//         select_seeds[t]=seed;
-//         for (size_t r = 0; r<R; r++){
-//             NodeId label = skeches[r].label[seed];
-//             skeches[r].size[label]=0;
-//         }
-//         cout << "seed " << t << ": " << seed << endl;
-//     }
-//     return select_seeds;
-// }
+pair<sequence<NodeId>,float> InfluenceMaximizer::select_seeds(int k, size_t R){
+    timer t;
+    t.start();
+    init_sketches(R, true);
+    t.stop();
+    cout << "initial sketches: " << t.get_total() << endl; 
+    float influence_sum=0;
+    sequence<NodeId> seeds(k);
+    for (int t = 0; t<k; t++){
+        sequence<size_t> influence(G.n);
+        parallel_for(0, G.n, [&](size_t i){
+            influence[i]=0;
+            for (size_t r = 0; r<R; r++){
+                size_t p_i = skeches[r][i];
+                if (!(p_i & TOP_BIT)){
+                    p_i = skeches[r][p_i];
+                }
+                influence[i] += (p_i &VAL_MASK); 
+            }
+        });
+        auto max_influence = parlay::max_element(influence);
+        NodeId seed = max_influence - influence.begin();
+        float influence_gain = influence[seed]/(R+0.0);
+        influence_sum+=influence_gain;
+        cout << "seed " << t << ": " << seed << " spread " <<influence_gain << endl;
+        seeds[t]=seed;
+        parallel_for(0, R, [&](size_t r){
+            size_t p_seed = skeches[r][seed];
+            if (!(p_seed & TOP_BIT)){
+                skeches[r][p_seed] = TOP_BIT | 0;
+            }else{
+                skeches[r][seed] = TOP_BIT | 0;
+            }
+        });
+    }
+    return make_pair(seeds,influence_sum);
+}

@@ -21,8 +21,6 @@ int main(int argc, char* argv[]){
     auto label = union_find(graph, hash_edge);
     size_t sum=0;
     bool check_success=true;
-    size_t TOP_BIT = (size_t)UINT_N_MAX + 1;
-    size_t VAL_MASK  = (size_t)UINT_N_MAX;
 
     for(size_t i = 0; i< graph.n; i++){
         size_t p_i = label[i];
