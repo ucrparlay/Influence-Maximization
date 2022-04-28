@@ -18,6 +18,7 @@ int main(int argc, char* argv[]){
     cout << "n: " << graph.n << " m: " << graph.m << endl; 
     Hash_Edge hash_edge;
     hash_edge.graph_id = 0;
+    hash_edge.forward = true;
     auto label = union_find(graph, hash_edge);
     size_t sum=0;
     bool check_success=true;

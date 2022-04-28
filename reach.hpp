@@ -21,15 +21,14 @@ class REACH {
   Graph& graph;
   sequence<NodeId> front;
   hashbag<NodeId> bag;
-  Hash_Edge& hash_edge;
   sequence<bool> dense_front;
   sequence<bool> new_dense;
   bool sparse_pre;
   size_t n_front;
   size_t threshold;
   size_t n;
-  size_t sparse_update(sequence<bool>& dst, bool local);
-  size_t dense_update(sequence<bool>& dst);
+  size_t sparse_update(sequence<bool>& dst, bool local, Hash_Edge& hash_edge);
+  size_t dense_update(sequence<bool>& dst, Hash_Edge& hash_edge);
   void front_sparse2dense();
   void front_dense2sparse();
   bool judge();
@@ -37,10 +36,10 @@ class REACH {
 
  public:
   size_t num_round;
-  void reach_seq(NodeId source, sequence<bool>& dst);
-  void reach(NodeId source, sequence<bool>& dst, bool local);
+  void reach_seq(NodeId source, sequence<bool>& dst, Hash_Edge & hash_edge);
+  void reach(NodeId source, sequence<bool>& dst, bool local, Hash_Edge &hash_edge, bool inactive_dense = false);
   REACH() = delete;
-  REACH(Graph& G, Hash_Edge& _hash_edge) : graph(G), bag(G.n), hash_edge(_hash_edge) {
+  REACH(Graph& G) : graph(G), bag(G.n) {
     n = graph.n;
     front = sequence<NodeId>(n);
     dense_front = sequence<bool>(n);
@@ -50,10 +49,11 @@ class REACH {
   void swap_graph() {
     swap(graph.in_E, graph.E);
     swap(graph.in_offset, graph.offset);
+    swap(graph.in_W, graph.W);
   }
 };
 
-void REACH::reach_seq(NodeId source, sequence<bool>& dst) {
+void REACH::reach_seq(NodeId source, sequence<bool>& dst, Hash_Edge & hash_edge) {
   queue<NodeId> my_queue;
   NodeId current_node;
   parallel_for(0, n, [&](long i) { dst[i] = false; });
@@ -64,7 +64,7 @@ void REACH::reach_seq(NodeId source, sequence<bool>& dst) {
     my_queue.pop();
     for (size_t i = graph.offset[current_node];
          i < graph.offset[current_node + 1]; i++) {
-      if (hash_edge(current_node, graph.E[i]) && dst[graph.E[i]] == false) {
+      if (hash_edge(current_node, graph.E[i], graph.W[i]) && dst[graph.E[i]] == false) {
         dst[graph.E[i]] = true;
         my_queue.push(graph.E[i]);
       }
@@ -110,7 +110,7 @@ bool REACH::judge() {
   return sparse_now;
 }
 
-size_t REACH::sparse_update(sequence<bool>& dst, bool local) {
+size_t REACH::sparse_update(sequence<bool>& dst, bool local, Hash_Edge& hash_edge) {
   parallel_for(
       0, n_front,
       [&](size_t i) {
@@ -130,7 +130,8 @@ size_t REACH::sparse_update(sequence<bool>& dst, bool local) {
             } else {
               for (size_t j = graph.offset[u]; j < graph.offset[u + 1]; j++) {
                 NodeId v = graph.E[j];
-                if (hash_edge(u,v) && dst[v] == false) {
+                float w = graph.W[j];
+                if (hash_edge(u,v,w) && dst[v] == false) {
                   if (compare_and_swap(&dst[v], false, true)) {
                     if (tail < block_size) {
                       local_queue[tail++] = v;
@@ -150,7 +151,8 @@ size_t REACH::sparse_update(sequence<bool>& dst, bool local) {
               graph.offset[node], graph.offset[node + 1],
               [&](size_t j) {
                 NodeId v = graph.E[j];
-                if (hash_edge(node,v) && dst[v] == false) {
+                float w = graph.W[j];
+                if (hash_edge(node, v, w) && dst[v] == false) {
                   if (compare_and_swap(&dst[v], false, true)) {
                     bag.insert(v);
                   }
@@ -163,13 +165,14 @@ size_t REACH::sparse_update(sequence<bool>& dst, bool local) {
   return bag.pack(make_slice(front));
 }
 
-size_t REACH::dense_update(sequence<bool>& dst) {
+size_t REACH::dense_update(sequence<bool>& dst, Hash_Edge& hash_edge) {
   parallel_for(0, graph.n, [&](size_t i) {
     new_dense[i] = false;
     if (dst[i] == false) {
       for (size_t j = graph.in_offset[i]; j < graph.in_offset[i + 1]; j++) {
         NodeId ngb_node = graph.in_E[j];
-        if (hash_edge(ngb_node, i) && dense_front[ngb_node]) {
+        float w = graph.in_W[j];
+        if (hash_edge(ngb_node,i, w) && dense_front[ngb_node]) {
           dst[i] = true;
           new_dense[i] = true;
           break;
@@ -198,7 +201,7 @@ EdgeId REACH::dense_sample(NodeId rand_seed) {
   return n_front * (out_edges / count);
 }
 
-void REACH::reach(NodeId source, sequence<bool>& dst, bool local) {
+void REACH::reach(NodeId source, sequence<bool>& dst, bool local, Hash_Edge& hash_edge, bool inactive_dense) {
   parallel_for(0, graph.n, [&](NodeId i) { dst[i] = false; });
   front[0] = source;
   dst[source] = true;
@@ -212,22 +215,29 @@ void REACH::reach(NodeId source, sequence<bool>& dst, bool local) {
     timer t;
     t.start();
     cout << "round " << num_round << " front " << n_front << endl;
-    timer judge_timer;
-    judge_timer.start();
 #endif
-    sparse_now = judge();
+    if (inactive_dense){
+      n_front = sparse_update(dst, local, hash_edge);
+    }else{
+      timer judge_timer;
+      judge_timer.start();
+      sparse_now = judge();
 #if defined(DEBUG)
-    if (sparse_now)
-      cout << "sparse" << endl;
-    else
-      cout << "dense" << endl;
-    cout << "judge time " << judge_timer.stop() << endl;
+      if (sparse_now){
+        cout << "sparse" << endl;
+      }else{
+        cout << "dense" << endl;
+      }
+      cout << "judge time " << judge_timer.stop() << endl;
 #endif
-    if (sparse_now)
-      n_front = sparse_update(dst, local);
-    else
-      n_front = dense_update(dst);
-    sparse_pre = sparse_now;
+      if (sparse_now){
+        n_front = sparse_update(dst, local, hash_edge);
+      }else{
+        n_front = dense_update(dst, hash_edge);
+      }
+      sparse_pre = sparse_now;
+    }
+    
 #if defined(DEBUG)
     cout << "cost " << t.get_total() << endl;
 #endif

@@ -59,8 +59,8 @@ IM: IM.cpp IM.hpp $(COMMON)
 # scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp
 # 	$(CC) $(CPPFLAGS) scc.cpp -o scc
 
-# reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
-# 	$(CC) $(CPPFLAGS) reach.cpp -o reach
+reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
+	$(CC) $(CPPFLAGS) reach.cpp -o reach
 
 union_find: union_find.cpp union_find.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) union_find.cpp -o union_find

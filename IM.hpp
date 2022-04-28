@@ -35,12 +35,14 @@ void InfluenceMaximizer::init_sketches(size_t R, bool parallel){
         parallel_for(0, R, [&](size_t i){
             Hash_Edge hash_edge;
             hash_edge.graph_id = i;
+            hash_edge.forward = true;
             skeches[i]=union_find(G, hash_edge);
         });
     }else{
         for (size_t i = 0; i<R; i++){
             Hash_Edge hash_edge;
             hash_edge.graph_id = i;
+            hash_edge.forward= true;
             skeches[i] = union_find(G, hash_edge);
         }
     }

@@ -601,8 +601,10 @@ Graph read_large_sym_graph(char* filename) {
 
 
 struct Hash_Edge {
-    NodeId graph_id; 
+    NodeId graph_id;
+    bool forward;
     bool operator()(NodeId u, NodeId v, float w) const {
+      if (!forward) swap(u,v);
       return _hash(_hash(u)+v)+_hash(graph_id) < w*UINT_N_MAX;
     }
 };

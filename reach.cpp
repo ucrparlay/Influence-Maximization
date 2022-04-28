@@ -28,23 +28,29 @@ int main(int argc, char** argv) {
   cout << "n: " << graph.n << " m: " << graph.m << endl;
 
   NodeId graph_id = P.getOptionInt("-i",0);
-  float w = P.getOptionDouble("-w", 1.0);
-  bool directed = P.getOption("-d");
-  Hash_Edge hash_edge{graph_id, directed, w};
-
-  REACH REACH_P(graph, hash_edge);
+  float w = P.getOptionDouble("-w", 0.0);
+  if (w == 0.0){
+      cout << "WIC" << endl;
+      AssignIndegreeWeight(graph);
+  }else{
+      cout << "UIC w: " << w<<  endl;
+      AssignUniWeight(graph, w);
+  }
+  REACH REACH_P(graph);
 
   sequence<bool> dst(graph.n);
 
   NodeId source = P.getOptionInt("-r", (NodeId)0);
   int repeat = P.getOptionInt("-t", (int)3);
   bool local = P.getOption("-local");
+  Hash_Edge hash_edge{graph_id, true};
   timer t;
-  REACH_P.reach(source, dst, local);
+  REACH_P.reach(source, dst, local, hash_edge);
   double reach_cost;
   for (int i = 0; i < repeat; i++) {
     t.start();
-    REACH_P.reach(source, dst, local);
+    hash_edge.forward = true;
+    REACH_P.reach(source, dst, local, hash_edge);
     reach_cost = t.stop();
     cout << "reachability cost: " << reach_cost << " round "
          << REACH_P.num_round << endl;
@@ -57,7 +63,8 @@ int main(int argc, char** argv) {
     sequence<bool> dst_seq(graph.n);
     timer t3;
     t3.start();
-    REACH_P.reach_seq(source, dst_seq);
+    hash_edge.forward = true;
+    REACH_P.reach_seq(source, dst_seq, hash_edge);
     t3.stop();
     cout << "sequential bfs cost " << t3.get_total() << endl;
     cout << "checking answer" << endl;
