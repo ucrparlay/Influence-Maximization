@@ -41,7 +41,7 @@ endif
 
 COMMON = graph.hpp parseCommandLine.hpp utilities.h get_time.hpp
 
-all: graph IM union_find
+all: graph IM union_find reach
 
 	
 graph: graph.cpp $(COMMON)
@@ -56,8 +56,8 @@ IM: IM.cpp IM.hpp $(COMMON)
 # bfs: bfs.cpp bfs.hpp $(COMMON)
 # 	$(CC) $(CPPFLAGS) bfs.cpp -o bfs
 
-# scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp
-# 	$(CC) $(CPPFLAGS) scc.cpp -o scc
+scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp
+	$(CC) $(CPPFLAGS) scc.cpp -o scc
 
 reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
 	$(CC) $(CPPFLAGS) reach.cpp -o reach

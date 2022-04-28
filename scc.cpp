@@ -100,17 +100,24 @@ int main(int argc, char** argv) {
   sequence<size_t> label = sequence<size_t>(graph.n);
   int repeat = P.getOptionInt("-t", (int)5);
   NodeId graph_id = P.getOptionInt("-i", 0);
-  float w = P.getOptionDouble("-w", 1);
-  Hash_Edge hash_edge{graph_id, true, w};
+  float w = P.getOptionDouble("-w", 0.0);
+  if (w == 0.0){
+    cout << "WIC" << endl;
+    AssignIndegreeWeight(graph);
+  }else{  
+    cout << "UIC" << endl;
+    AssignUniWeight(graph,w);
+  }
+  Hash_Edge hash_edge{graph_id, true};
   timer t;
-  SCC SCC_P(graph, hash_edge);
+  SCC SCC_P(graph);
   SCC_P.front_thresh = P.getOptionInt("-thresh", 1000000000);
-  SCC_P.scc(label, beta, local_reach, local_scc);
+  SCC_P.scc(label, hash_edge, beta, local_reach, local_scc);
   SCC_P.timer_reset();
   double scc_cost;
   for (int i = 0; i < repeat; i++) {
     t.start();
-    SCC_P.scc(label, beta, local_reach, local_scc);
+    SCC_P.scc(label, hash_edge, beta, local_reach, local_scc);
     scc_cost = t.stop();
     cout << "scc cost: " << scc_cost << endl;
   }

@@ -37,7 +37,7 @@ class REACH {
  public:
   size_t num_round;
   void reach_seq(NodeId source, sequence<bool>& dst, Hash_Edge & hash_edge);
-  void reach(NodeId source, sequence<bool>& dst, bool local, Hash_Edge &hash_edge, bool inactive_dense = false);
+  void reach(NodeId source, sequence<bool>& dst, Hash_Edge &hash_edge, bool local,bool inactive_dense = false);
   REACH() = delete;
   REACH(Graph& G) : graph(G), bag(G.n) {
     n = graph.n;
@@ -201,7 +201,7 @@ EdgeId REACH::dense_sample(NodeId rand_seed) {
   return n_front * (out_edges / count);
 }
 
-void REACH::reach(NodeId source, sequence<bool>& dst, bool local, Hash_Edge& hash_edge, bool inactive_dense) {
+void REACH::reach(NodeId source, sequence<bool>& dst, Hash_Edge& hash_edge, bool local, bool inactive_dense) {
   parallel_for(0, graph.n, [&](NodeId i) { dst[i] = false; });
   front[0] = source;
   dst[source] = true;

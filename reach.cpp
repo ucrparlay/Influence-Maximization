@@ -45,12 +45,12 @@ int main(int argc, char** argv) {
   bool local = P.getOption("-local");
   Hash_Edge hash_edge{graph_id, true};
   timer t;
-  REACH_P.reach(source, dst, local, hash_edge);
+  REACH_P.reach(source, dst, hash_edge, local);
   double reach_cost;
   for (int i = 0; i < repeat; i++) {
     t.start();
     hash_edge.forward = true;
-    REACH_P.reach(source, dst, local, hash_edge);
+    REACH_P.reach(source, dst, hash_edge, local);
     reach_cost = t.stop();
     cout << "reachability cost: " << reach_cost << " round "
          << REACH_P.num_round << endl;

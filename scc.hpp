@@ -35,7 +35,6 @@ struct hash_kv {
 class SCC {
  private:
   Graph& graph;
-  Hash_Edge& hash_edge;
   gbbs::resizable_table<K, V, hash_kv> table_forw;
   gbbs::resizable_table<K, V, hash_kv> table_back;
   hashbag<NodeId> bag;
@@ -52,10 +51,10 @@ class SCC {
   bool edge_map(NodeId cur_node, NodeId ngb_node,
                 gbbs::resizable_table<K, V, hash_kv>& table);
   int multi_search(sequence<size_t>& labels,
-                   gbbs::resizable_table<K, V, hash_kv>& table, bool forward,
+                   gbbs::resizable_table<K, V, hash_kv>& table, Hash_Edge& hash_edge, bool forward,
                    bool local);
   int multi_search_safe(sequence<size_t>& labels,
-                   gbbs::resizable_table<K, V, hash_kv>& table, bool forward,
+                   gbbs::resizable_table<K, V, hash_kv>& table, Hash_Edge& hash_edge, bool forward,
                    bool local);
   void time_stamp_update() {
     current_stamp++;
@@ -72,9 +71,9 @@ class SCC {
  public:
   size_t front_thresh;
   size_t num_round;
-  void scc(sequence<size_t>& labels, double beta, bool local1, bool local2);
+  void scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool local1, bool local2);
   SCC() = delete;
-  SCC(Graph& G, Hash_Edge& _hash_edge) : graph(G), hash_edge(_hash_edge),bag(G.n) {
+  SCC(Graph& G) : graph(G), bag(G.n) {
     n = graph.n;
     num_round = 0;
     front = sequence<NodeId>(n);
@@ -152,7 +151,7 @@ bool SCC::edge_map(NodeId cur_node, NodeId ngb_node,
 // template <class SI>
 // inline ?
 int SCC::multi_search(sequence<size_t>& labels,
-                      gbbs::resizable_table<K, V, hash_kv>& table, bool forward,
+                      gbbs::resizable_table<K, V, hash_kv>& table, Hash_Edge& hash_edge, bool forward,
                       bool local) {
   parallel_for(0, n_front, [&](size_t i) {
     table.insert(make_tuple(front[i], label_offset + i));
@@ -163,12 +162,15 @@ int SCC::multi_search(sequence<size_t>& labels,
 
   EdgeId* offset;
   NodeId* E;
+  float* W;
   if (forward) {
     offset = (graph.offset).data();
     E = (graph.E).data();
+    W = (graph.W).data();
   } else {
     offset = (graph.in_offset).data();
     E = (graph.in_E).data();
+    W = (graph.in_W).data();
   }
 
   size_t round = 0;
@@ -218,7 +220,8 @@ int SCC::multi_search(sequence<size_t>& labels,
               head++;
               for (EdgeId j = offset[u]; j < offset[u + 1]; j++) {
                 NodeId v = E[j];
-                if (!(labels[v] & TOP_BIT) && hash_edge(u,v) && (labels[v] == labels[u])) {
+                float w = W[j];
+                if (hash_edge(u,v,w) && !(labels[v] & TOP_BIT) && (labels[v] == labels[u])) {
                   if (edge_map(u, v, table)) {
                     if (tail < (int)block_size) {
                       Q[tail] = v;
@@ -242,12 +245,11 @@ int SCC::multi_search(sequence<size_t>& labels,
               }
             }
           } else if (degree > 0) {
-            parallel_for(
-                0, degree,
-                [&](size_t j) {
+            parallel_for(0, degree,[&](size_t j) {
                   NodeId ngb_node = E[offset[node] + j];
-                  if (!(labels[ngb_node] & TOP_BIT) &&
-                      hash_edge(node, ngb_node) &&
+                  float w = W[offset[node]+j];
+                  if (hash_edge(node, ngb_node, w) &&
+                    !(labels[ngb_node] & TOP_BIT) &&
                       (labels[ngb_node] == labels[node])) {
                     if (edge_map(node, ngb_node, table)) {
                       if (atomic_compare_and_swap(&bits[ngb_node], false,
@@ -284,17 +286,17 @@ int SCC::multi_search(sequence<size_t>& labels,
 }
 
 int SCC::multi_search_safe(sequence<size_t>& labels,
-                      gbbs::resizable_table<K, V, hash_kv>& table, bool forward,
+                      gbbs::resizable_table<K, V, hash_kv>& table, Hash_Edge& hash_edge, bool forward,
                       bool local) {
     int round;
-    while ((round = multi_search(labels, table, forward, local))== -1){
+    while ((round = multi_search(labels, table, hash_edge, forward, local))== -1){
       cout << "trigger table resize" << endl;
       table.double_size();
     }
     return round; 
 }
 
-void SCC::scc(sequence<size_t>& labels, double beta, bool local_reach,
+void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool local_reach,
               bool local_scc) {
 #if defined(BREAKDOWN)
   init_timer.start();
@@ -345,12 +347,14 @@ void SCC::scc(sequence<size_t>& labels, double beta, bool local_reach,
 #if defined(BREAKDOWN)
   first_round_timer.start();
 #endif
-  REACH REACH_P(graph, hash_edge);
-  REACH_P.reach(source, dist_1, local_reach);
+  REACH REACH_P(graph);
+  hash_edge.forward = true;
+  REACH_P.reach(source, dist_1, hash_edge, local_reach);
   bfs_forward_depth = REACH_P.num_round;
 
   REACH_P.swap_graph();
-  REACH_P.reach(source, dist_2, local_reach);
+  hash_edge.forward = false;
+  REACH_P.reach(source, dist_2, hash_edge, local_reach);
 
   // bfs_backward_time = first_round_timer.stop();
   // first_round_timer.start();
@@ -428,7 +432,8 @@ void SCC::scc(sequence<size_t>& labels, double beta, bool local_reach,
                 (size_t)(beta)*out_table_ne);
     table_forw =
         gbbs::resizable_table<K, V, hash_kv>(out_table_m, empty, hash_kv());
-    int out_depth = multi_search_safe(labels, table_forw, true, local_scc);
+    hash_edge.forward = true;
+    int out_depth = multi_search_safe(labels, table_forw, hash_edge, true, local_scc);
     forward_time = t_search.stop();
 #if defined(BREAKDOWN)
     multi_search_timer.stop();
@@ -445,7 +450,8 @@ void SCC::scc(sequence<size_t>& labels, double beta, bool local_reach,
                 (size_t)(beta)*in_table_ne);
     table_back =
         gbbs::resizable_table<K, V, hash_kv>(in_table_m, empty, hash_kv());
-    int in_depth = multi_search_safe(labels, table_back, false, local_scc);
+    hash_edge.forward = false;
+    int in_depth = multi_search_safe(labels, table_back, hash_edge, false, local_scc);
     backward_time = t_search.stop();
 #if defined(BREAKDOWN)
     multi_search_timer.stop();
