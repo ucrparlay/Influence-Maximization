@@ -1,9 +1,9 @@
 CXX = g++
-CXXFLAGS = -g -Wall -Wextra -O3 -std=c++17
+CXXFLAGS = -g -pthread -Wall -Wextra -O3 -std=c++17
 
 all: benchmark
 
-benchmark: samples/benchmark.cpp src/pmc.cpp
+benchmark: samples/benchmark.cpp src/pmc.cpp ../graph.hpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 .PHONY: clean

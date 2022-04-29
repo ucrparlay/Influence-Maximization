@@ -5,8 +5,11 @@
 #include <stack>
 #include <algorithm>
 #include "../src/pmc.hpp"
+#include "../../graph.hpp"
 
 using namespace std;
+
+// ./benchmark /data/lwang323/graph/bin/Epinions1_sym.bin 5 100
 
 int main(int argc, char **argv) {
 	if (argc < 4) {
@@ -14,21 +17,22 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	string file = argv[1];
+  auto graph = read_graph(argv[1]);
+
 	int k = atoi(argv[2]);
 	int R = atoi(argv[3]);
 
-	ifstream is(file.c_str());
 	vector<pair<pair<int, int>, double> > es;
 	int u, v;
 	double p;
-	for (; is >> u >> v >> p;) {
-		if (u == v) {
-			continue;
-		}
-		es.push_back(make_pair(make_pair(u, v), p));
-	}
-	is.close();
+  for (unsigned int i = 0; i < graph.n; i++) {
+    for (unsigned int j = graph.offset[i]; j < graph.offset[i + 1]; j++) {
+      u = i;
+      v = graph.E[j];
+      p = 0.1;
+      es.push_back(make_pair(make_pair(u, v), p));
+    }
+  }
 
 	InfluenceMaximizer im;
 	vector<int> seeds = im.run(es, k, R);
