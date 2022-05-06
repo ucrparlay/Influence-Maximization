@@ -1,6 +1,6 @@
 #!/bin/bash
-FILE_OUT=/home/lwang323/IM/data/sample_graph.txt
-FILE_OUT_DIR=//home/lwang323/IM/data
+FILE_OUT=/home/lwang323/IM/data/sample_scc.txt
+FILE_OUT_DIR=//home/lwang323/IM/data/SCC
 BINARY_DATA_PATH_LARGE=/data/graphs/bin
 BINARY_DATA_PATH_SMALL=/data/lwang323/graph/bin
 SMALL_GRAPH="\
@@ -26,55 +26,55 @@ Cosmo50_5 \
 # WIC
 echo "WIC"
 for g in $SMALL_GRAPH; do
-    echo "$g " >> $FILE_OUT
+    # echo "$g " >> $FILE_OUT
     echo "$g "
-    numactl -i all /home/lwang323/IM/graph $BINARY_DATA_PATH_SMALL/$g.bin $BINARY_DATA_PATH_SMALL/WIC/$g.wic >> $FILE_OUT
+    numactl -i all /home/lwang323/IM/scc $BINARY_DATA_PATH_SMALL/$g.bin -static -t 1 >> $FILE_OUT_DIR/$g.wic
 done
 
 for g in $LARGE_GRAPH; do
-    echo "$g " >> $FILE_OUT
+    # echo "$g " >> $FILE_OUT
     echo "$g "
-    numactl -i all /home/lwang323/IM/graph $BINARY_DATA_PATH_LARGE/$g.bin $BINARY_DATA_PATH_SMALL/WIC/$g.wic >> $FILE_OUT
+    numactl -i all /home/lwang323/IM/scc $BINARY_DATA_PATH_LARGE/$g.bin -static -t 1 >> $FILE_OUT_DIR/$g.wic
 done
 
 #UIC w = 0.1
 echo "UIC w = 0.1"
 for g in $SMALL_GRAPH; do
-    echo "$g " >> $FILE_OUT
+    # echo "$g " >> $FILE_OUT
     echo "$g "
-    numactl -i all /home/lwang323/IM/graph $BINARY_DATA_PATH_SMALL/$g.bin $BINARY_DATA_PATH_SMALL/UIC/$g.uic100 -w 0.1 >> $FILE_OUT
+    numactl -i all /home/lwang323/IM/scc $BINARY_DATA_PATH_SMALL/$g.bin -w 0.1 -static -t 1>> $FILE_OUT_DIR/$g.uic100
 done
 
 for g in $LARGE_GRAPH; do
-    echo "$g " >> $FILE_OUT
+    # echo "$g " >> $FILE_OUT
     echo "$g "
-    numactl -i all /home/lwang323/IM/graph $BINARY_DATA_PATH_LARGE/$g.bin $BINARY_DATA_PATH_SMALL/UIC/$g.uic100 -w 0.1 >> $FILE_OUT
+    numactl -i all /home/lwang323/IM/scc $BINARY_DATA_PATH_LARGE/$g.bin -w 0.1 -static -t 1>> $FILE_OUT_DIR/$g.uic.100
 done
 
 #UIC w = 0.025
 echo "UIC w = 0.025"
 for g in $SMALL_GRAPH; do
-    echo "$g " >> $FILE_OUT
+    # echo "$g " >> $FILE_OUT
     echo "$g "
-    numactl -i all /home/lwang323/IM/graph $BINARY_DATA_PATH_SMALL/$g.bin $BINARY_DATA_PATH_SMALL/UIC/$g.uic25 -w 0.025 >> $FILE_OUT
+    numactl -i all /home/lwang323/IM/scc $BINARY_DATA_PATH_SMALL/$g.bin -w 0.025 -static -t 1>> $FILE_OUT_DIR/$g.uic.25
 done
 
 for g in $LARGE_GRAPH; do
-    echo "$g " >> $FILE_OUT
+    # echo "$g " >> $FILE_OUT
     echo "$g "
-    numactl -i all /home/lwang323/IM/graph $BINARY_DATA_PATH_LARGE/$g.bin $BINARY_DATA_PATH_SMALL/UIC/$g.uic25 -w 0.025 >> $FILE_OUT
+    numactl -i all /home/lwang323/IM/scc $BINARY_DATA_PATH_LARGE/$g.bin -w 0.025 -static -t 1>> $FILE_OUT_DIR/$g.uic.25
 done
 
 #UIC w = 0.01
 echo "UIC w = 0.01"
 for g in $SMALL_GRAPH; do
-    echo "$g " >> $FILE_OUT
+    # echo "$g " >> $FILE_OUT
     echo "$g "
-    numactl -i all /home/lwang323/IM/graph $BINARY_DATA_PATH_SMALL/$g.bin $BINARY_DATA_PATH_SMALL/UIC/$g.uic10 -w 0.01 >> $FILE_OUT
+    numactl -i all /home/lwang323/IM/scc $BINARY_DATA_PATH_SMALL/$g.bin  -w 0.01 -static -t 1>> $FILE_OUT_DIR/$g.uic.10
 done
 
 for g in $LARGE_GRAPH; do
-    echo "$g " >> $FILE_OUT
+    # echo "$g " >> $FILE_OUT
     echo "$g "
-    numactl -i all /home/lwang323/IM/graph $BINARY_DATA_PATH_LARGE/$g.bin $BINARY_DATA_PATH_SMALL/UIC/$g.uic10 -w 0.01 >> $FILE_OUT
+    numactl -i all /home/lwang323/IM/scc $BINARY_DATA_PATH_LARGE/$g.bin  -w 0.01 -static -t 1>> $FILE_OUT_DIR/$g.uic.10
 done

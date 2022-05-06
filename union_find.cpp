@@ -1,4 +1,5 @@
 #include <iostream>
+#include "get_time.hpp"
 #include "union_find.hpp"
 #include "parseCommandLine.hpp"
 int main(int argc, char* argv[]){
@@ -19,7 +20,15 @@ int main(int argc, char* argv[]){
     Hash_Edge hash_edge;
     hash_edge.graph_id = 0;
     hash_edge.forward = true;
-    auto label = union_find(graph, hash_edge);
+    timer t;
+    auto label = union_find(graph,hash_edge);
+    for ( size_t r = 0; r<5; r++){
+        t.start();
+        label = union_find(graph, hash_edge);
+        double time = t.stop();
+        cout << "cost time: " << time << endl;
+    }
+    cout << t.get_total() / 5.0 << endl;
     size_t sum=0;
     bool check_success=true;
 

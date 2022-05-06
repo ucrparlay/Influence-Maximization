@@ -28,23 +28,17 @@ sequence<size_t> union_find( const Graph &graph, Hash_Edge& hash_edge){
       }
     });
   });
-
-  sequence<size_t> parent = sequence<size_t>(graph.n);
+  sequence<size_t> parents = sequence<size_t>(graph.n);
   parallel_for(0, graph.n, [&](size_t i){
-      parent[i]= TOP_BIT | 0;
+    parents[i]= (size_t)find(i,label);
   });
-  parallel_for(0, graph.n,[&](size_t i){
-    NodeId p_i = find(i, label);
-    if (p_i != i){
-        parent[i]=(size_t)p_i;
-    }
-    size_t oldV, newV;
-    do {
-        oldV = parent[p_i];
-        newV = ((oldV & VAL_MASK)+1) | TOP_BIT;
-    }while (!CAS(&parent[p_i], oldV, newV));
+  auto hist = histogram_by_key(parents);
+  parallel_for(0, hist.size(), [&](size_t i){
+    size_t node = hist[i].first;
+    size_t size = hist[i].second;
+    parents[node] = TOP_BIT | size;
   });
-  return parent;
+  return parents;
 }
 
 

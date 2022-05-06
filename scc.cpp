@@ -2,63 +2,16 @@
 
 #include <algorithm>  // std::max
 #include <vector>
+#include <unordered_set>
 
 #include "get_time.hpp"
 #include "parseCommandLine.hpp"
 
 using namespace std;
 
-// void SCC_checker(size_t* label, long n){
-//     edge * edge_list = (edge*)malloc(sizeof(edge)*n);
-//     std::vector<edge> hash_vec;  // (component_size,hash_sum)
-//     cilk_for(auto i = 0; i<n; i++){
-//         edge_list[i]=edge(label[i],i);
-//     }
-//     quickSort(edge_list, n, edgeCmp());
-//     uintT hash_sum = 0;
-//     uintT count = 0;
-//     for (auto i = 0; i<n-1; i++){
-//         hash_sum += hashInt(edge_list[i].v);
-//         count ++;
-//         if (edge_list[i].u != edge_list[i+1].u){
-//             hash_vec.push_back(edge(count,hash_sum));
-//             hash_sum = 0;
-//             count = 0;
-//         }
-//     }
-//     hash_sum += hashInt(edge_list[n-1].v);
-//     count ++;
-//     hash_vec.push_back(edge(count, hash_sum));
-//     sort(hash_vec.begin(), hash_vec.end(), edgeCmp());
-
-//     cout << "n_scc = " << hash_vec.size() << endl;
-//     cout << "Largest StronglyConnectedComponents has " <<
-//     hash_vec[hash_vec.size()-1].u << " vertices" << endl;
-
-//     hash_sum = 0;
-//     for (auto iter = hash_vec.begin(); iter != hash_vec.end(); iter++){
-//         // std::cout << std::to_string(iter->u) << " " <<
-//         std::to_string(iter->v) << std::endl; hash_sum +=
-//         hashInt(hashInt(iter->u)+hashInt(iter->v));
-//     }
-//     std::cout<< "hash_code " << hash_sum << std::endl;
-
-//     std::cout << "first largest SCC's size " << hash_vec[hash_vec.size()-1].u
-//     << " hash_code " << hash_vec[hash_vec.size()-1].v << std::endl; std::cout
-//     << "third largest SCC's size " << hash_vec[hash_vec.size()-3].u << "
-//     hash_code " << hash_vec[hash_vec.size()-3].v << std::endl; std::cout <<
-//     "fifth largest SCC's size " << hash_vec[hash_vec.size()-5].u << "
-//     hash_code " << hash_vec[hash_vec.size()-5].v << std::endl; std::cout <<
-//     "ninth largest SCC's size " << hash_vec[hash_vec.size()-9].u << "
-//     hash_code " << hash_vec[hash_vec.size()-9].v << std::endl;
-
-//     free (edge_list);
-// }
 
 void SCC_status(sequence<size_t> label, size_t n) {
-  // uintT* flag = new uintT[n+1];
   sequence<NodeId> flag(n + 1);
-  // uintT MASK = UINT_T_MAX >>1;
   NodeId MASK = UINT_N_MAX >> 1;
   parallel_for(0, n + 1, [&](NodeId i) { flag[i] = 0; });
   for (size_t i = 0; i < n; i++) {
@@ -71,6 +24,43 @@ void SCC_status(sequence<size_t> label, size_t n) {
   }) << endl;
   cout << "Largest StronglyConnectedComponents has "
        << parlay::reduce(flag, maxm<NodeId>()) << endl;
+}
+
+struct hashFunction{
+  size_t operator()(const pair<NodeId, NodeId>& edge) const{
+    return _hash(_hash(edge.first)+edge.second);
+  }
+};
+
+void SCC_statistic(Graph graph, sequence<size_t> label, Hash_Edge& hash_edge){
+  size_t n = graph.n;
+  sequence<NodeId> scc_sizes(n);
+  parallel_for(0, n, [&](size_t i){scc_sizes[i]=0;});
+  for (size_t i = 0; i<n; i++){
+    scc_sizes[label[i]] ++;
+  }
+  unordered_set<pair<NodeId,NodeId>, hashFunction> edge_set;
+  for (size_t i = 0; i<n; i++){
+    NodeId u = i;
+    for (size_t j = graph.offset[i]; j<graph.offset[i+1]; j++){
+      NodeId v = graph.E[j];
+      float w = graph.W[j];
+      if (hash_edge(u,v,w) && label[u]!= label[v]){
+        edge_set.insert(make_pair(label[u], label[v]));
+      }
+    }
+  }
+  cout << "n_scc = " << parlay::count_if(scc_sizes, [&](NodeId scc_size) {
+    return scc_size != 0;
+  }) << endl;
+  cout << "Largest StronglyConnectedComponents has "
+       << parlay::reduce(scc_sizes, maxm<NodeId>()) << endl;
+  cout << "number of inter_scc edges = " << edge_set.size() << endl;
+  parlay::sort_inplace(scc_sizes);
+  cout << "Largest 200 SCC size:" << endl;
+  for (size_t i = 0; i<200; i++){
+    cout << scc_sizes[n-i-1] << endl;
+  }
 }
 
 int main(int argc, char** argv) {
@@ -127,6 +117,10 @@ int main(int argc, char** argv) {
 #endif
   if (P.getOption("-status")) SCC_status(label, graph.n);
   if (P.getOption("-print")) output_component_sizes(label, graph.n);
+  if (P.getOption("-static")) {
+    hash_edge.forward = true;
+    SCC_statistic(graph,label, hash_edge);
+  }
 
   return 0;
 }
