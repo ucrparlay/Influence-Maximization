@@ -5,6 +5,7 @@
 #include <stack>
 #include <algorithm>
 #include "../src/pmc.hpp"
+#include "../../get_time.hpp"
 #include "../../graph.hpp"
 
 using namespace std;
@@ -17,10 +18,16 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+  freopen("result.txt", "w", stdout);
+
   auto graph = read_graph(argv[1]);
 
 	int k = atoi(argv[2]);
 	int R = atoi(argv[3]);
+  cout << "k = " << k << endl;
+  cout << "R = " << R << endl;
+  cout << "n = " << graph.n << endl;
+  cout << "m = " << graph.m << endl;
 
 	vector<pair<pair<int, int>, double> > es;
 	int u, v;
@@ -29,15 +36,20 @@ int main(int argc, char **argv) {
     for (unsigned int j = graph.offset[i]; j < graph.offset[i + 1]; j++) {
       u = i;
       v = graph.E[j];
-      p = 0.1;
+      p = 0.01;
       es.push_back(make_pair(make_pair(u, v), p));
+      es.push_back(make_pair(make_pair(v, u), p));
     }
   }
 
+  timer tm;
 	InfluenceMaximizer im;
 	vector<int> seeds = im.run(es, k, R);
+  cout << "time: " << tm.stop() << endl;
+
+  cout << "seeds:\n";
 	for (int i = 0; i < k; i++) {
-		cout << i << "-th seed =\t" << seeds[i] << endl;
+		cout << seeds[i] << " \n"[i == k - 1];
 	}
 
 	return 0;

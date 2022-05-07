@@ -61,7 +61,7 @@ int main(int argc, char * argv[])
   //build graph
   auto my_graph = outside_graph::TTT::read_graph(file_path);
   cout << "my_graph: " << my_graph.n << " " << my_graph.m << endl;
-  Graph::BuildFromFile2UC(my_graph, 0.1);
+  Graph::BuildFromFile2UC(my_graph, 0.99);
   GeneralCascade::Build();
   cout << "Graph: " << Graph::GetN() << " " << Graph::GetM() << endl;
 
@@ -69,6 +69,11 @@ int main(int argc, char * argv[])
   long time;
   double influence;
   int *seeds;
+
+  // seeds = new int[2];
+  // seeds[0] = 0, seeds[1] = 1;
+  // cout << toSimulateOnce(seeds, 2, GeneralCascade::Run) << endl;
+  // return 0;
 
   string s; 
   s="bsg";//basic static greedy
