@@ -39,6 +39,10 @@ int main(int argc, char* argv[]){
     auto seeds_spread = IM_solver.select_seeds(k, R);
     cost = t.stop();
     cout << "total time: " << cost << " spread " << seeds_spread.second << endl;
+    for (auto x: seeds_spread.first) {
+      cout << x << " ";
+    }
+    cout << endl;
     
     return 0;
 }

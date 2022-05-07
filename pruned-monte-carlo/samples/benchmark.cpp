@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     for (unsigned int j = graph.offset[i]; j < graph.offset[i + 1]; j++) {
       u = i;
       v = graph.E[j];
-      p = 0.01;
+      p = 0.1;
       es.push_back(make_pair(make_pair(u, v), p));
       es.push_back(make_pair(make_pair(v, u), p));
     }

@@ -17,8 +17,10 @@ struct GeneralCascade {
       int num = 0;
       auto frontier = seeds;
       while (!frontier.empty()) {
-        parlay::parallel_for(0, frontier.size(),
-                             [&](int i) { activated[frontier[i]] = true; });
+        parlay::parallel_for(0, frontier.size(), [&](int i) {
+          assert(!activated[frontier[i]]);
+          activated[frontier[i]] = true;
+        });
         num += frontier.size();
         parlay::sequence<parlay::sequence<NodeId>> new_nodes(frontier.size());
         parlay::parallel_for(0, frontier.size(), [&](int i) {
@@ -37,6 +39,7 @@ struct GeneralCascade {
               good_nghs, [](pair<NodeId, float> p) { return p.first; });
         });
         auto all = parlay::flatten(new_nodes);
+        parlay::sort_inplace(all);
         auto new_frontier = parlay::unique(all);
         frontier = new_frontier;
       }
