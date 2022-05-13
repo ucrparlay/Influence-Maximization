@@ -14,7 +14,7 @@ parlay::sequence<NodeId> ReadSeeds(char* file) {
   return seeds;
 }
 
-// ./general_cascade /data/graphs/bin/HT_2_sym.bin seeds.txt -w 0.1
+// ./general_cascade /data/lwang323/graph/bin/HepPh_sym.bin seeds_im.txt -w 0.1
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     cerr << "Usage: " << argv[0] << " graph_file seeds_file\n";
@@ -25,6 +25,7 @@ int main(int argc, char* argv[]) {
   char* seeds_file = argv[2];
   auto graph = read_graph(graph_file);
   float w = P.getOptionDouble("-w", 0.0);
+  bool random = P.getOption("-random");
   if (w == 0.0) {
     cout << "WIC" << endl;
     AssignIndegreeWeight(graph);
@@ -40,7 +41,7 @@ int main(int argc, char* argv[]) {
   cout << endl;
 
   GeneralCascade gc(&graph);
-  auto res = gc.Run(seeds, 100);
+  auto res = gc.Run(seeds, 1000, random);
   cout << res << endl;
 
   return 0;

@@ -3,7 +3,7 @@
 #include "parseCommandLine.hpp"
 #include "get_time.hpp"
 
-
+// ./IM /data/graphs/bin/com-orkut_sym.bin -k 200 -R 200 -w 0.1
 int main(int argc, char* argv[]){
     CommandLine P(argc, argv);
     if (argc < 1) {

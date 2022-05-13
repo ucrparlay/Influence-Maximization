@@ -10,7 +10,7 @@
 
 using namespace std;
 
-// ./benchmark /data/lwang323/graph/bin/Epinions1_sym.bin 5 100
+// ./benchmark /data/lwang323/graph/bin/Youtube_sym.bin 200 200
 
 int main(int argc, char **argv) {
 	if (argc < 4) {

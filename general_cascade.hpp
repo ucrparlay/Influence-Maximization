@@ -11,11 +11,21 @@ using namespace std;
 struct GeneralCascade {
   GeneralCascade(Graph* graph) : graph(graph) {}
 
-  double Run(const parlay::sequence<NodeId>& seeds, int num_iter) {
+  double Run(const parlay::sequence<NodeId>& seeds, int num_iter, bool random = false) {
     auto Simulate = [&]() -> double {
       parlay::sequence<bool> activated(graph->n, false);
       int num = 0;
       auto frontier = seeds;
+      if (random) {
+        auto k = seeds.size();
+        frontier.clear();
+        while (frontier.size() < k) {
+          NodeId t = rand() % graph->n;
+          if (std::find(frontier.begin(), frontier.end(), t) == frontier.end()) {
+            frontier.push_back(t);
+          }
+        }
+      }
       while (!frontier.empty()) {
         parlay::parallel_for(0, frontier.size(), [&](int i) {
           assert(!activated[frontier[i]]);
@@ -33,7 +43,8 @@ struct GeneralCascade {
           auto good_nghs = parlay::filter(nghs, [&](pair<NodeId, float> p) {
             auto v = p.first;
             auto w = p.second;
-            return !activated[v] && (double)rand() / (double)RAND_MAX < w;
+            auto t = (double)rand() / (double)RAND_MAX;
+            return !activated[v] && t < w;
           });
           new_nodes[i] = parlay::map(
               good_nghs, [](pair<NodeId, float> p) { return p.first; });

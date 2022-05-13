@@ -53,7 +53,7 @@ pair<sequence<NodeId>,float> InfluenceMaximizer::select_seeds(int k, size_t R){
     t.start();
     init_sketches(R, true);
     t.stop();
-    cout << "initial sketches: " << t.get_total() << endl; 
+    // cout << "initial sketches: " << t.get_total() << endl; 
     float influence_sum=0;
     sequence<NodeId> seeds(k);
     for (int t = 0; t<k; t++){
@@ -72,7 +72,7 @@ pair<sequence<NodeId>,float> InfluenceMaximizer::select_seeds(int k, size_t R){
         NodeId seed = max_influence - influence.begin();
         float influence_gain = influence[seed]/(R+0.0);
         influence_sum+=influence_gain;
-        cout << "seed " << t << ": " << seed << " spread " <<influence_gain << endl;
+        // cout << "seed " << t << ": " << seed << " spread " <<influence_gain << endl;
         seeds[t]=seed;
         parallel_for(0, R, [&](size_t r){
             size_t p_seed = skeches[r][seed];
