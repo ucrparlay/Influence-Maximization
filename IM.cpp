@@ -3,7 +3,7 @@
 #include "parseCommandLine.hpp"
 #include "get_time.hpp"
 
-
+// ./IM /data/lwang323/graph/bin/Youtube_sym.bin -k 200 -R 200 -w 0.1
 int main(int argc, char* argv[]){
     CommandLine P(argc, argv);
     if (argc < 1) {
@@ -47,6 +47,11 @@ int main(int argc, char* argv[]){
     // auto seeds_spread = IM_solver.select_seeds(k, R);
     // cost = t.stop();
     // cout << "total time: " << cost << " spread " << seeds_spread.second << endl;
+    cout << "total time: " << cost << " spread " << seeds_spread.second << endl;
+    for (auto x: seeds_spread.first) {
+      cout << x << " ";
+    }
+    cout << endl;
     
     return 0;
 }

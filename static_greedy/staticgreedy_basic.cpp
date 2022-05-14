@@ -161,7 +161,7 @@ int* BasicStaticGreedy::GetSeeds(int R, int k)
     while (lastupdate[heap[0]] != i)
     {
       cnt++;
-      if (cnt % 10000 == 0) cout << "cnt: " << cnt << endl;
+      cout << "cnt: " << cnt << endl;
       ccc++;
       lastupdate[heap[0]] = i;
       set[i] = heap[0];

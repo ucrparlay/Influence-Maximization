@@ -5,11 +5,12 @@
 #include <stack>
 #include <algorithm>
 #include "../src/pmc.hpp"
+#include "../../get_time.hpp"
 #include "../../graph.hpp"
 
 using namespace std;
 
-// ./benchmark /data/lwang323/graph/bin/Epinions1_sym.bin 5 100
+// ./benchmark /data/lwang323/graph/bin/Youtube_sym.bin 200 200
 
 int main(int argc, char **argv) {
 	if (argc < 4) {
@@ -17,10 +18,16 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+  freopen("result.txt", "w", stdout);
+
   auto graph = read_graph(argv[1]);
 
 	int k = atoi(argv[2]);
 	int R = atoi(argv[3]);
+  cout << "k = " << k << endl;
+  cout << "R = " << R << endl;
+  cout << "n = " << graph.n << endl;
+  cout << "m = " << graph.m << endl;
 
 	vector<pair<pair<int, int>, double> > es;
 	int u, v;
@@ -31,13 +38,18 @@ int main(int argc, char **argv) {
       v = graph.E[j];
       p = 0.1;
       es.push_back(make_pair(make_pair(u, v), p));
+      es.push_back(make_pair(make_pair(v, u), p));
     }
   }
 
+  timer tm;
 	InfluenceMaximizer im;
 	vector<int> seeds = im.run(es, k, R);
+  cout << "time: " << tm.stop() << endl;
+
+  cout << "seeds:\n";
 	for (int i = 0; i < k; i++) {
-		cout << i << "-th seed =\t" << seeds[i] << endl;
+		cout << seeds[i] << " \n"[i == k - 1];
 	}
 
 	return 0;
