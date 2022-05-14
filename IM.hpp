@@ -141,7 +141,6 @@ pair<sequence<NodeId>,float> InfluenceMaximizer::select_seeds(int k, size_t R){
     init_sketches(R, true);
     t.stop();
     cout << "initial sketches: " << t.get_total() << endl;
-    abort();
     float influence_sum=0;
     sequence<NodeId> seeds(k);
     for (int t = 0; t<k; t++){
