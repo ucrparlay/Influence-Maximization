@@ -23,6 +23,7 @@ public:
         m = G.m;
     }
     void init_sketches(size_t R, bool parallel);
+    void init_sketches2(size_t R, bool parallel);
     pair<sequence<NodeId>, float> select_seeds(int k, size_t R);
 };
 
@@ -48,12 +49,56 @@ void InfluenceMaximizer::init_sketches(size_t R, bool parallel){
     }
 }
 
+void InfluenceMaximizer::init_sketches2(size_t R, bool parallel) {
+  cout << "init_sketches2" << endl;
+  assert(parallel);  // must parallel
+  auto find = gbbs::find_variants::find_compress;
+  auto splice = gbbs::splice_variants::split_atomic_one;
+  auto unite =
+      gbbs::unite_variants::UniteRemCAS<decltype(splice), decltype(find),
+                                        find_atomic_halve>(find, splice);
+  sequence<sequence<NodeId>> label(R, sequence<NodeId>(G.n));
+  parallel_for(0, R, [&](size_t i) {
+    parallel_for(0, G.n, [&](size_t j) { label[i][j] = j; });
+  });
+  sequence<Hash_Edge> hash_edges(R);
+  for (size_t i = 0; i < R; i++) {
+    hash_edges[i].graph_id = i;
+    hash_edges[i].forward = true;
+  }
+  parallel_for(0, G.n, [&](size_t i) {
+    NodeId u = i;
+    parallel_for(G.offset[i], G.offset[i + 1], [&](size_t j) {
+      NodeId v = G.E[j];
+      float w = G.W[j];
+      parallel_for(0, R, [&](size_t k) {
+        if (hash_edges[k](u, v, w)) {
+          unite(u, v, label[k]);
+        }
+      });
+    });
+  });
+  skeches = sequence<sequence<size_t>>(R, sequence<size_t>(G.n));
+  parallel_for(0, R, [&](size_t k) {
+    auto& parents = skeches[k];
+    parallel_for(0, G.n,
+                 [&](size_t i) { parents[i] = (size_t)find(i, label[k]); });
+    auto hist = histogram_by_key(parents);
+    parallel_for(0, hist.size(), [&](size_t i) {
+      size_t node = hist[i].first;
+      size_t size = hist[i].second;
+      parents[node] = TOP_BIT | size;
+    });
+  });
+}
+
 pair<sequence<NodeId>,float> InfluenceMaximizer::select_seeds(int k, size_t R){
     timer t;
     t.start();
     init_sketches(R, true);
     t.stop();
-    // cout << "initial sketches: " << t.get_total() << endl; 
+    cout << "initial sketches: " << t.get_total() << endl;
+    abort();
     float influence_sum=0;
     sequence<NodeId> seeds(k);
     for (int t = 0; t<k; t++){
