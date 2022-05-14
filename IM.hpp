@@ -22,29 +22,34 @@ public:
         n = G.n;
         m = G.m;
     }
-    void init_sketches(size_t R, bool parallel);
+    void init_sketches(size_t R, int option);
     pair<sequence<NodeId>, float> select_seeds(int k, size_t R);
 };
 
 
 
 
-void InfluenceMaximizer::init_sketches(size_t R, bool parallel){
+void InfluenceMaximizer::init_sketches(size_t R, int option){
     skeches = sequence<sequence<size_t>>(R);
-    if (parallel){
+    if (option == 0){
         parallel_for(0, R, [&](size_t i){
             Hash_Edge hash_edge;
             hash_edge.graph_id = i;
             hash_edge.forward = true;
             skeches[i]=union_find(G, hash_edge);
         });
-    }else{
+    }else if (option == 1){
+        // timer t;
         for (size_t i = 0; i<R; i++){
             Hash_Edge hash_edge;
             hash_edge.graph_id = i;
             hash_edge.forward= true;
+            // t.start();
             skeches[i] = union_find(G, hash_edge);
+            // cout << "cost: " << t.stop() << endl;
         }
+    }else if(option == 2){
+        skeches = union_find(G, R);
     }
 }
 
