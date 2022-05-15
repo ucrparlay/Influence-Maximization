@@ -41,17 +41,21 @@ sequence<size_t> union_find( const Graph &graph, Hash_Edge& hash_edge){
   return parents;
 }
 
-sequence<sequence<size_t>> union_find(const Graph& graph, int R){
+void union_find(const Graph& graph, int R, sequence<sequence<size_t>> sketches){
   auto find = gbbs::find_variants::find_compress;
   auto splice = gbbs::splice_variants::split_atomic_one;
   auto unite =gbbs::unite_variants::UniteRemCAS<decltype(splice), decltype(find),
                                         find_atomic_halve>(find, splice);
-  sequence<sequence<NodeId>> labels = sequence<sequence<NodeId>>(R);
-  sequence<Hash_Edge> hash_edges = sequence<Hash_Edge>(graph.n);
+  sequence<sequence<NodeId>> labels(R, sequence<NodeId>(graph.n));
+  sequence<Hash_Edge> hash_edges(graph.n);
   for (int i = 0; i<R; i++){
-    labels[i] = sequence<NodeId>(graph.n);
     hash_edges[i] = Hash_Edge{(NodeId)i, true};
   }
+  parallel_for(0, R, [&](size_t t){
+    parallel_for(0, graph.n, [&](size_t i){
+      labels[t][i] = i;
+    });
+  });
   
   parallel_for(0, graph.n, [&](size_t i){
     NodeId u = i;
@@ -66,22 +70,19 @@ sequence<sequence<size_t>> union_find(const Graph& graph, int R){
       });
     });
   });
-  sequence<sequence<size_t>> parents = sequence<sequence<size_t>>(R);
-  for (int i = 0; i<R; i++){
-    parents[i]=sequence<size_t>(graph.n);
-  }
+  // sequence<sequence<size_t>> parents(R, sequence<size_t>(graph.n));
+  sketches = sequence<sequence<size_t>> (R,sequence<size_t>(graph.n));
   parallel_for(0, R, [&](size_t r){
     parallel_for(0, graph.n, [&](size_t i){
-      parents[r][i] = find(i, labels[r]);
+      sketches[r][i] = find(i, labels[r]);
     });
-    auto hist = histogram_by_key(parents[r]);
+    auto hist = histogram_by_key(sketches[r]);
     parallel_for(0, hist.size(), [&](size_t i){
       size_t node = hist[i].first;
       size_t size = hist[i].second;
-      parents[r][node] = TOP_BIT | size;
+      sketches[r][node] = TOP_BIT | size;
     });
   });
-  return parents;
 }
 
 

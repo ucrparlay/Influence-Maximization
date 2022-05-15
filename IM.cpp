@@ -35,7 +35,8 @@ int main(int argc, char* argv[]){
     // cost = t.stop();
     // cout << "sequential{parallel} init_sketches: " << cost << endl;
     t.start();
-    IM_solver.init_sketches(R, 2);
+    // IM_solver.init_sketches(R, 2);
+    IM_solver.init_sketches2(R);
     cost = t.stop();
     cout << "parallel{edges} init_sketches: " << cost<< endl;
     
@@ -47,11 +48,10 @@ int main(int argc, char* argv[]){
     // auto seeds_spread = IM_solver.select_seeds(k, R);
     // cost = t.stop();
     // cout << "total time: " << cost << " spread " << seeds_spread.second << endl;
-    cout << "total time: " << cost << " spread " << seeds_spread.second << endl;
-    for (auto x: seeds_spread.first) {
-      cout << x << " ";
-    }
-    cout << endl;
+    // for (auto x: seeds_spread.first) {
+    //   cout << x << " ";
+    // }
+    // cout << endl;
     
     return 0;
 }

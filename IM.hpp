@@ -15,7 +15,7 @@ class InfluenceMaximizer{
 private:
     size_t n,m;
     Graph& G;
-    sequence<sequence<size_t>> skeches;
+    sequence<sequence<size_t>> sketches;
 public:
     InfluenceMaximizer() = delete;
     InfluenceMaximizer(Graph & graph):G(graph){
@@ -23,7 +23,7 @@ public:
         m = G.m;
     }
     void init_sketches(size_t R, int option);
-    void init_sketches(size_t R, bool parallel);
+    // void init_sketches(size_t R, bool parallel);
     void init_sketches2(size_t R);
     void init_sketches3(size_t R);
     pair<sequence<NodeId>, float> select_seeds(int k, size_t R);
@@ -33,13 +33,13 @@ public:
 
 
 void InfluenceMaximizer::init_sketches(size_t R, int option){
-    skeches = sequence<sequence<size_t>>(R);
+    sketches = sequence<sequence<size_t>>(R);
     if (option == 0){
         parallel_for(0, R, [&](size_t i){
             Hash_Edge hash_edge;
             hash_edge.graph_id = i;
             hash_edge.forward = true;
-            skeches[i]=union_find(G, hash_edge);
+            sketches[i]=union_find(G, hash_edge);
         });
     }else if (option == 1){
         // timer t;
@@ -48,11 +48,11 @@ void InfluenceMaximizer::init_sketches(size_t R, int option){
             hash_edge.graph_id = i;
             hash_edge.forward= true;
             // t.start();
-            skeches[i] = union_find(G, hash_edge);
+            sketches[i] = union_find(G, hash_edge);
             // cout << "cost: " << t.stop() << endl;
         }
     }else if(option == 2){
-        skeches = union_find(G, R);
+        union_find(G, R, sketches);
     }
 }
 
@@ -85,9 +85,9 @@ void InfluenceMaximizer::init_sketches2(size_t R) {
       });
     });
   });
-  skeches = sequence<sequence<size_t>>(R, sequence<size_t>(G.n));
+  sketches = sequence<sequence<size_t>>(R, sequence<size_t>(G.n));
   parallel_for(0, R, [&](size_t k) {
-    auto& parents = skeches[k];
+    auto& parents = sketches[k];
     parallel_for(0, G.n,
                  [&](size_t i) { parents[i] = (size_t)find(i, label[k]); });
     auto hist = histogram_by_key(parents);
@@ -127,9 +127,9 @@ void InfluenceMaximizer::init_sketches3(size_t R) {
       });
     });
   });
-  skeches = sequence<sequence<size_t>>(R, sequence<size_t>(G.n));
+  sketches = sequence<sequence<size_t>>(R, sequence<size_t>(G.n));
   parallel_for(0, R, [&](size_t k) {
-    auto& parents = skeches[k];
+    auto& parents = sketches[k];
     parallel_for(0, G.n,
                  [&](size_t i) { parents[i] = (size_t)find(i, label[k]); });
     auto hist = histogram_by_key(parents);
@@ -154,9 +154,9 @@ pair<sequence<NodeId>,float> InfluenceMaximizer::select_seeds(int k, size_t R){
         parallel_for(0, G.n, [&](size_t i){
             influence[i]=0;
             for (size_t r = 0; r<R; r++){
-                size_t p_i = skeches[r][i];
+                size_t p_i = sketches[r][i];
                 if (!(p_i & TOP_BIT)){
-                    p_i = skeches[r][p_i];
+                    p_i = sketches[r][p_i];
                 }
                 influence[i] += (p_i &VAL_MASK); 
             }
@@ -168,11 +168,11 @@ pair<sequence<NodeId>,float> InfluenceMaximizer::select_seeds(int k, size_t R){
         // cout << "seed " << t << ": " << seed << " spread " <<influence_gain << endl;
         seeds[t]=seed;
         parallel_for(0, R, [&](size_t r){
-            size_t p_seed = skeches[r][seed];
+            size_t p_seed = sketches[r][seed];
             if (!(p_seed & TOP_BIT)){
-                skeches[r][p_seed] = TOP_BIT | 0;
+                sketches[r][p_seed] = TOP_BIT | 0;
             }else{
-                skeches[r][seed] = TOP_BIT | 0;
+                sketches[r][seed] = TOP_BIT | 0;
             }
         });
     }
