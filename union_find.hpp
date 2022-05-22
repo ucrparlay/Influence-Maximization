@@ -9,7 +9,7 @@ using namespace parlay;
 constexpr size_t TOP_BIT = size_t(UINT_N_MAX) + 1;
 constexpr size_t VAL_MASK = UINT_N_MAX;
 
-sequence<size_t> union_find( const Graph &graph, Hash_Edge& hash_edge){
+void union_find( const Graph &graph, Hash_Edge& hash_edge, sequence<size_t>& parents){
   auto find = gbbs::find_variants::find_compress;
   auto splice = gbbs::splice_variants::split_atomic_one;
   auto unite =gbbs::unite_variants::UniteRemCAS<decltype(splice), decltype(find),
@@ -28,7 +28,7 @@ sequence<size_t> union_find( const Graph &graph, Hash_Edge& hash_edge){
       }
     });
   });
-  sequence<size_t> parents = sequence<size_t>(graph.n);
+  // sequence<size_t> parents = sequence<size_t>(graph.n);
   parallel_for(0, graph.n, [&](size_t i){
     parents[i]= (size_t)find(i,label);
   });
@@ -38,25 +38,29 @@ sequence<size_t> union_find( const Graph &graph, Hash_Edge& hash_edge){
     size_t size = hist[i].second;
     parents[node] = TOP_BIT | size;
   });
-  return parents;
+  // return parents;
 }
 
-void union_find(const Graph& graph, int R, sequence<sequence<size_t>> sketches){
+void union_find(const Graph& graph, int R, sequence<sequence<size_t>>& sketches){
   auto find = gbbs::find_variants::find_compress;
   auto splice = gbbs::splice_variants::split_atomic_one;
   auto unite =gbbs::unite_variants::UniteRemCAS<decltype(splice), decltype(find),
                                         find_atomic_halve>(find, splice);
+  timer t;
+  t.start();
   sequence<sequence<NodeId>> labels(R, sequence<NodeId>(graph.n));
-  sequence<Hash_Edge> hash_edges(graph.n);
-  for (int i = 0; i<R; i++){
-    hash_edges[i] = Hash_Edge{(NodeId)i, true};
-  }
-  parallel_for(0, R, [&](size_t t){
+  sequence<Hash_Edge> hash_edges(R);
+
+  parallel_for(0, R, [&](size_t r){
+    hash_edges[r].graph_id = r;
+    hash_edges[r].forward = true;
     parallel_for(0, graph.n, [&](size_t i){
-      labels[t][i] = i;
+      labels[r][i] = i;
     });
   });
-  
+  t.stop();
+  cout << "initial sketches: " << t.stop() << endl;
+  t.start();
   parallel_for(0, graph.n, [&](size_t i){
     NodeId u = i;
     parallel_for(graph.offset[i], graph.offset[i+1], [&](size_t j){
@@ -64,25 +68,72 @@ void union_find(const Graph& graph, int R, sequence<sequence<size_t>> sketches){
       float w = graph.W[j];
       parallel_for(0, R, [&](size_t r){
         // Hash_Edge hash_edge = Hash_Edge{(NodeId)i, true};
-        if ((hash_edges[r])(u,v,w)){
-          unite(u,v,(labels[r]));
+        if (hash_edges[r](u,v,w)){
+          unite(u,v,labels[r]);
         }
       });
     });
   });
-  // sequence<sequence<size_t>> parents(R, sequence<size_t>(graph.n));
-  sketches = sequence<sequence<size_t>> (R,sequence<size_t>(graph.n));
+  cout << "union find: " << t.stop() << endl;
+  // sketches = sequence<sequence<size_t>> (R,sequence<size_t>(graph.n));
+  t.start();
   parallel_for(0, R, [&](size_t r){
     parallel_for(0, graph.n, [&](size_t i){
       sketches[r][i] = find(i, labels[r]);
-    });
-    auto hist = histogram_by_key(sketches[r]);
+    }, 1024);
+    // --------sort & pack begin----------------
+    // timer t_hist;
+    // t_hist.start();
+    // auto sorted_lable = sort(sketches[r]);
+    // double sort_cost = t_hist.stop();
+    // t_hist.start();
+    // sequence<bool> flag(graph.n);
+    // parallel_for(1, graph.n, [&](size_t i){
+    //   if (sorted_lable[i]!= sorted_lable[i-1]){
+    //     flag[i-1]=true;
+    //   }else{
+    //     flag[i-1]=false;
+    //   }
+    // },1024);
+    // flag[graph.n-1] = true;
+    // auto unique_labels = pack(make_slice(sorted_lable), flag);
+    // auto sizes_scan = pack_index(flag);
+    // sketches[r][unique_labels[0]] = TOP_BIT | sizes_scan[0];
+    // parallel_for(1, sizes_scan.size(), [&](size_t i){
+    //   auto sizes = sizes_scan[i]-sizes_scan[i-1];
+    //   sketches[r][unique_labels[i]] = TOP_BIT | sizes;
+    // },1024);
+    // double pack_cost = t_hist.stop();
+    // printf("sort_cost %f, pack_cost %f\n", sort_cost, pack_cost);
+    // --------sort & pack end------------------
+    // --------hist begin-----------------------
+    // auto hist = histogram_by_key(sketches[r]);
+    // using Hash = decltype(std::hash<size_t>());
+    // using Equal = decltype(equal_to<size_t>());
+    // auto helper = count_by_key_helper<size_t,size_t,Hash,Equal>{std::hash<size_t>(),equal_to<size_t>()};
+    // // auto hist = internal::seq_collect_reduce_sparse<uninitialized_relocate_tag>(make_slice(sketches[r]), helper);
+    // parallel_for(0, hist.size(), [&](size_t i){
+    //   size_t node = hist[i].first;
+    //   size_t size = hist[i].second;
+    //   sketches[r][node] = TOP_BIT | size;
+    // --------hist end---------------------------
+    // --------sequential scan begin -------------
+    sequence<NodeId> hist(graph.n);
+    parallel_for(0, graph.n, [&](size_t i){hist[i] = 0;});
+    for (size_t i = 0; i<graph.n; i++){
+      NodeId p_label = sketches[r][i];
+      hist[p_label]++;
+    }
+    // auto max_cc = parlay::max_element(hist);
+    // cout << "max_cc " << *max_cc << endl;
     parallel_for(0, hist.size(), [&](size_t i){
-      size_t node = hist[i].first;
-      size_t size = hist[i].second;
-      sketches[r][node] = TOP_BIT | size;
+      if (hist[i]!= 0){
+        sketches[r][i] = TOP_BIT | (size_t) hist[i];
+      }
     });
+    // --------sequential scan end -----------------
   });
+  cout << "after union_find: " << t.stop() << endl;
 }
 
 

@@ -6,6 +6,8 @@ scc
 bfs
 ldd
 union_find
+log
 data/*
 general_cascade
 seeds_*
+*.sh

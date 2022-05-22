@@ -1,6 +1,6 @@
 #!/bin/bash
-FILE_OUT=/home/lwang323/IM/data/IM3_sketch.txt
-MEM_OUT=/home/lwang323/IM/data/IM3_memory.txt
+FILE_OUT=/home/lwang323/IM/data/IM2_sketch.txt
+MEM_OUT=/home/lwang323/IM/data/IM2_memory.txt
 FILE_OUT_DIR=//home/lwang323/IM/data
 BINARY_DATA_PATH_LARGE=/data/graphs/bin
 BINARY_DATA_PATH_SMALL=/data/lwang323/graph/bin
@@ -20,16 +20,20 @@ friendster_sym.bin \
 sd_arc_sym.bin \
 RoadUSA_sym.bin \
 Germany_sym.bin \
-HT_5_sym.bin \
-Household.lines_5_sym.bin \
-CHEM_5_sym.bin \
-GeoLifeNoScale_5_sym.bin \
-Cosmo50_5_sym.bin \
 grid_4000_4000_sym.bin \
 grid_4000_4000_03_sym.bin \
 grid_1000_10000_sym.bin \
 grid_1000_10000_03_sym.bin \
 "
+KNN_GRAPH="\
+HT_5_sym.bin \
+Household.lines_5_sym.bin \
+CHEM_5_sym.bin \
+GeoLifeNoScale_5_sym.bin \
+Cosmo50_5_sym.bin \
+"
+
+
 
 COMMOND=IM
 
@@ -44,6 +48,14 @@ for g in $SMALL_GRAPH; do
 done
 
 for g in $LARGE_GRAPH; do
+    echo "$g " >> $FILE_OUT
+    echo "$g "
+    # /usr/bin/time -v numactl -i all /home/lwang323/IM/$COMMOND $BINARY_DATA_PATH_LARGE/$g >> $FILE_OUT 2>>$MEM_OUT
+    numactl -i all /home/lwang323/IM/$COMMOND $BINARY_DATA_PATH_LARGE/$g >> $FILE_OUT
+    # $FILE_OUT_DIR/$g.wic
+done
+
+for g in $KNN_GRAPH; do
     echo "$g " >> $FILE_OUT
     echo "$g "
     # /usr/bin/time -v numactl -i all /home/lwang323/IM/$COMMOND $BINARY_DATA_PATH_LARGE/$g >> $FILE_OUT 2>>$MEM_OUT
@@ -66,5 +78,14 @@ for g in $LARGE_GRAPH; do
     echo "$g "
     # /usr/bin/time -v numactl -i all /home/lwang323/IM/$COMMOND $BINARY_DATA_PATH_LARGE/$g -w 0.1 >> $FILE_OUT 2>>$MEM_OUT
     numactl -i all /home/lwang323/IM/$COMMOND $BINARY_DATA_PATH_LARGE/$g -w 0.1 >> $FILE_OUT
+    # $FILE_OUT_DIR/$g.uic
+done
+
+echo "UIC w = 0.2"
+for g in $KNN_GRAPH; do
+    echo "$g " >> $FILE_OUT
+    echo "$g "
+    # /usr/bin/time -v numactl -i all /home/lwang323/IM/$COMMOND $BINARY_DATA_PATH_LARGE/$g -w 0.1 >> $FILE_OUT 2>>$MEM_OUT
+    numactl -i all /home/lwang323/IM/$COMMOND $BINARY_DATA_PATH_LARGE/$g -w 0.2 >> $FILE_OUT
     # $FILE_OUT_DIR/$g.uic
 done
