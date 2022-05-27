@@ -18,8 +18,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-  freopen("result.txt", "w", stdout);
-
+  cout << "graph: " << argv[1] << endl;
   auto graph = read_graph(argv[1]);
 
 	int k = atoi(argv[2]);
