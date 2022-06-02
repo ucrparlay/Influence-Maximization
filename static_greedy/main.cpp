@@ -59,9 +59,10 @@ int main(int argc, char * argv[])
   string algo = argv[4];
 
   //build graph
+  cout << "graph: " << file_path << endl;
   auto my_graph = outside_graph::TTT::read_graph(file_path);
   cout << "my_graph: " << my_graph.n << " " << my_graph.m << endl;
-  Graph::BuildFromFile2UC(my_graph, 0.99);
+  Graph::BuildFromFile2UC(my_graph, 0.1);
   GeneralCascade::Build();
   cout << "Graph: " << Graph::GetN() << " " << Graph::GetM() << endl;
 
@@ -86,7 +87,7 @@ int main(int argc, char * argv[])
     int end_time = clock();
     time = end_time - start_time;
 
-    influence = toSimulateOnce(seeds, set_size, GeneralCascade::Run);
+    // influence = toSimulateOnce(seeds, set_size, GeneralCascade::Run);
   }
 
   s="sgd";//static greedy with dynamic update on directed graph

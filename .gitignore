@@ -11,3 +11,5 @@ data/*
 general_cascade
 seeds_*
 *.sh
+*/__pycache__
+scripts/*.txt

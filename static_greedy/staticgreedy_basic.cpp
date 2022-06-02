@@ -155,14 +155,10 @@ int* BasicStaticGreedy::GetSeeds(int R, int k)
   for (int i=0; i<top; i++)
   {
     cout << "i: " << i << endl;
-    int ccc = 0;
-
     int cnt = 0;
     while (lastupdate[heap[0]] != i)
     {
-      cnt++;
-      cout << "cnt: " << cnt << endl;
-      ccc++;
+      // cout << "cnt: " << cnt++ << endl;
       lastupdate[heap[0]] = i;
       set[i] = heap[0];
       improve[heap[0]] = GetInfluenceSpreadFromSnapshot(R, i+1, set, snapshots) - old;

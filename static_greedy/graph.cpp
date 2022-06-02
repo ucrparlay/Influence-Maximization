@@ -576,7 +576,7 @@ void Graph::BuildFromFile2UC(outside_graph::Graph& my_graph, double p){
   // FILE* in = fopen(file, "r");
   // fscanf(in,"%d %d", &n, &m);  
   n = my_graph.n;
-  m = my_graph.m;
+  m = my_graph.m / 2;
   cout << "BuildFromFile2UC " << n << " " << m << endl;
 
   degree.resize(n);
@@ -588,12 +588,13 @@ void Graph::BuildFromFile2UC(outside_graph::Graph& my_graph, double p){
   int cnt = 0;
   for (int i = 0; i < n; i++) {
     for (int j = my_graph.offset[i]; j < my_graph.offset[i + 1]; j++) {
-      edges[cnt].u = i;
-      edges[cnt].v = my_graph.E[j];
-      cnt++;
+      if (i < my_graph.E[j]) {
+        edges[cnt].u = i;
+        edges[cnt].v = my_graph.E[j];
+        cnt++;
+      }
     }
   }
-  assert(cnt == m);
 
   for (int i=0; i<m; i++)
   {
