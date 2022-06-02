@@ -603,10 +603,14 @@ Graph read_large_sym_graph(char* filename) {
 
 struct Hash_Edge {
     NodeId graph_id;
+    NodeId n;
+    // NodeId id_term;
     bool forward;
     bool operator()(NodeId u, NodeId v, float w) const {
       if (!forward) swap(u,v);
-      return _hash(_hash(u)+v)+_hash(graph_id) < w*UINT_N_MAX;
+      // return _hash(_hash(u)+v)+_hash(graph_id) < w*UINT_N_MAX;
+      return _hash( graph_id*n*n + u*n + v) < w*UINT_N_MAX;
+      // return _hash(id_term + u*n + v) < w*UINT_N_MAX;
     }
 };
 
@@ -666,41 +670,41 @@ void AssignIndegreeWeight(Graph &graph){
   }
 }
 
-void WriteSampledGraph(Graph graph, const char* const OutFileName){
-  sequence<edge> edge_list = sequence<edge>(graph.m);
-  timer t;
-  t.start();
-  parallel_for(0, graph.n, [&](size_t i){
-    NodeId u = i;
-    parallel_for(graph.offset[i], graph.offset[i+1], [&](size_t j){
-      NodeId v = graph.E[j];
-      edge_list[j] = edge(u,v);
-    });
-  });
-  t.stop();
-  cout << "traverse edges costs: " << t.get_total()<<endl;
+// void WriteSampledGraph(Graph graph, const char* const OutFileName){
+//   sequence<edge> edge_list = sequence<edge>(graph.m);
+//   timer t;
+//   t.start();
+//   parallel_for(0, graph.n, [&](size_t i){
+//     NodeId u = i;
+//     parallel_for(graph.offset[i], graph.offset[i+1], [&](size_t j){
+//       NodeId v = graph.E[j];
+//       edge_list[j] = edge(u,v);
+//     });
+//   });
+//   t.stop();
+//   cout << "traverse edges costs: " << t.get_total()<<endl;
 
-  Hash_Edge hash_edge{0,true};
-  auto sample_edges = delayed_seq<bool>(edge_list.size(), [&](size_t i) {
-    NodeId u = edge_list[i].u;
-    NodeId v = edge_list[i].v;
-    float w = graph.W[i];
-    return hash_edge(u,v,w);
-  });
-  auto unique_edges = pack(edge_list, sample_edges);
-  edge_list.clear();
-  Graph graph_sampled = EdgeListToGraph(unique_edges, graph.n);
+//   Hash_Edge hash_edge{0, (NodeId)graph.n ,true};
+//   auto sample_edges = delayed_seq<bool>(edge_list.size(), [&](size_t i) {
+//     NodeId u = edge_list[i].u;
+//     NodeId v = edge_list[i].v;
+//     float w = graph.W[i];
+//     return hash_edge(u,v,w);
+//   });
+//   auto unique_edges = pack(edge_list, sample_edges);
+//   edge_list.clear();
+//   Graph graph_sampled = EdgeListToGraph(unique_edges, graph.n);
 
-  string out_name = OutFileName;
-  out_name+=".bin";
-  cout << "write to " << out_name << endl;
-  cout << "n: " << graph_sampled.n << " m: " << graph_sampled.m << endl;
-  ofstream ofs(out_name);
-  size_t sizes = (graph_sampled.n + 1) * 8 + graph_sampled.m * 4 + 3 * 8;
-  ofs.write(reinterpret_cast<char*>(&graph_sampled.n), sizeof(size_t));
-  ofs.write(reinterpret_cast<char*>(&graph_sampled.m), sizeof(size_t));
-  ofs.write(reinterpret_cast<char*>(&sizes), sizeof(size_t));
-  ofs.write(reinterpret_cast<char*>((graph_sampled.offset).data()), (graph_sampled.n + 1) * 8);
-  ofs.write(reinterpret_cast<char*>((graph_sampled.E).data()), graph_sampled.m * 4);
-  ofs.close();
-}
+//   string out_name = OutFileName;
+//   out_name+=".bin";
+//   cout << "write to " << out_name << endl;
+//   cout << "n: " << graph_sampled.n << " m: " << graph_sampled.m << endl;
+//   ofstream ofs(out_name);
+//   size_t sizes = (graph_sampled.n + 1) * 8 + graph_sampled.m * 4 + 3 * 8;
+//   ofs.write(reinterpret_cast<char*>(&graph_sampled.n), sizeof(size_t));
+//   ofs.write(reinterpret_cast<char*>(&graph_sampled.m), sizeof(size_t));
+//   ofs.write(reinterpret_cast<char*>(&sizes), sizeof(size_t));
+//   ofs.write(reinterpret_cast<char*>((graph_sampled.offset).data()), (graph_sampled.n + 1) * 8);
+//   ofs.write(reinterpret_cast<char*>((graph_sampled.E).data()), graph_sampled.m * 4);
+//   ofs.close();
+// }

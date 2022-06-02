@@ -11,10 +11,11 @@ int main(int argc, char* argv[]){
         abort();
     }
     char* file = argv[1];
-    size_t k = P.getOptionInt("-k", 200);
+    // size_t k = P.getOptionInt("-k", 200);
     size_t R = P.getOptionInt("-R", 200);
     float w = P.getOptionDouble("-w", 0.0);
     int option = P.getOptionInt("-option", 2);
+    // bool CELF = P.getOption("-celf");
     Graph graph = read_graph(file);
     if (w == 0.0){
         cout << "WIC" << endl;
@@ -50,12 +51,12 @@ int main(int argc, char* argv[]){
     }
     
 
-    timer t_select;
-    auto seeds_spread = IM_solver.select_seeds(k, R);
-    cost = t_select.stop();
-    cout << "select time: " << cost  << endl;
-    for (auto x: seeds_spread) {
-      cout << x.first << " " << x.second << endl;
-    }    
+    // timer t_select;
+    // auto seeds_spread = IM_solver.select_seeds(k, R, CELF);
+    // cost = t_select.stop();
+    // cout << "select time: " << cost  << endl;
+    // for (auto x: seeds_spread) {
+    //   cout << x.first << " " << x.second << endl;
+    // }    
     return 0;
 }

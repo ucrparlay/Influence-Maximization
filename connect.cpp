@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
   t1.stop();
   NodeId graph_id = P.getOptionInt("-i",0);
   float w = P.getOptionDouble("-w", 1.0);
-  Hash_Edge hash_edge{graph_id, false, w};
+  Hash_Edge hash_edge{graph_id, false};
 
   cout << "#vertices: " << G.n << " #edges: " << G.m << '\n';
 

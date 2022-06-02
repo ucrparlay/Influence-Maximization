@@ -26,7 +26,7 @@ public:
     // void init_sketches(size_t R, bool parallel);
     void init_sketches2(size_t R);
     void init_sketches3(size_t R);
-    sequence<pair<NodeId, float>> select_seeds(int k, size_t R);
+    sequence<pair<NodeId, float>> select_seeds(int k, size_t R, bool CELF);
 };
 
 
@@ -148,7 +148,7 @@ void InfluenceMaximizer::init_sketches3(size_t R) {
   });
 }
 
-sequence<pair<NodeId,float>> InfluenceMaximizer::select_seeds(int k, size_t R){
+sequence<pair<NodeId,float>> InfluenceMaximizer::select_seeds(int k, size_t R, bool CELF){
     timer t;
     sequence<pair<NodeId,float>> seeds(k);
     if (k ==0) return seeds;
@@ -180,8 +180,8 @@ sequence<pair<NodeId,float>> InfluenceMaximizer::select_seeds(int k, size_t R){
     for (int t = 1; t<k; t++){
         size_t max_influence = 0;
         parallel_for(0, G.n, [&](size_t i){
-            if (influence[i] >= max_influence){
-              size_t new_influence = 0;
+            size_t new_influence = 0;
+            if ((!CELF) || influence[i] >= max_influence){
               for (size_t r = 0; r<R; r++){
                 size_t p_i = sketches[r][i];
                   if (!(p_i & TOP_BIT)){
@@ -190,9 +190,9 @@ sequence<pair<NodeId,float>> InfluenceMaximizer::select_seeds(int k, size_t R){
                   new_influence += (p_i & VAL_MASK); 
               }
               influence[i] = new_influence;
-              if (new_influence > max_influence){
-                write_max(&max_influence, new_influence, [](size_t a, size_t b){return a<b;});
-              }
+            }
+            if (CELF && (new_influence > max_influence)){
+              write_max(&max_influence, new_influence, [](size_t a, size_t b){return a<b;});
             }
         },1024);
         max_influence_it = parlay::find(make_slice(influence), max_influence);

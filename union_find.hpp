@@ -50,9 +50,9 @@ void union_find(const Graph& graph, int R, sequence<sequence<size_t>>& sketches)
   t.start();
   sequence<sequence<NodeId>> labels(R, sequence<NodeId>(graph.n));
   sequence<Hash_Edge> hash_edges(R);
-
   parallel_for(0, R, [&](size_t r){
     hash_edges[r].graph_id = r;
+    hash_edges[r].n = (NodeId)graph.n;
     hash_edges[r].forward = true;
     parallel_for(0, graph.n, [&](size_t i){
       labels[r][i] = i;
@@ -65,12 +65,13 @@ void union_find(const Graph& graph, int R, sequence<sequence<size_t>>& sketches)
     NodeId u = i;
     parallel_for(graph.offset[i], graph.offset[i+1], [&](size_t j){
       NodeId v = graph.E[j];
-      float w = graph.W[j];
+      // float w = graph.W[j];
       parallel_for(0, R, [&](size_t r){
         // Hash_Edge hash_edge = Hash_Edge{(NodeId)i, true};
-        if (hash_edges[r](u,v,w)){
-          unite(u,v,labels[r]);
-        }
+        unite(u,v,labels[r]);
+        // if (hash_edges[r](u,v,w)){
+        //   // unite(u,v,labels[r]);
+        // }
       });
     });
   });
