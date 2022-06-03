@@ -17,7 +17,7 @@ def run_sg(graph):
 
 
 if __name__ == '__main__':
-    # graphs = graph.get_all_graphs()
-    # for g in graphs:
-    #     run_sg(g)
-    run_sg('/data/lwang323/graph/bin/Youtube_sym.bin')
+    graphs = graph.get_all_graphs()
+    for g in graphs:
+        run_sg(g)
+    # run_sg('/data/lwang323/graph/bin/HepPh_sym.bin')

@@ -154,6 +154,7 @@ int* BasicStaticGreedy::GetSeeds(int R, int k)
 
   for (int i=0; i<top; i++)
   {
+    auto start_time = clock();
     cout << "i: " << i << endl;
     int cnt = 0;
     while (lastupdate[heap[0]] != i)
@@ -204,6 +205,9 @@ int* BasicStaticGreedy::GetSeeds(int R, int k)
       else
         break;
     }
+    auto end_time = clock();
+    auto round_time = end_time - start_time;
+    cout << "round time: " << (double)(round_time)/CLOCKS_PER_SEC << endl;
   }
 
   // delete[] heap;

@@ -51,7 +51,7 @@ all: graph IM union_find reach general_cascade
 graph: graph.cpp $(COMMON)
 	$(CC) $(CPPFLAGS) graph.cpp -o graph
 
-IM: IM.cpp IM.hpp union_find.hpp $(COMMON)
+IM: IM.cpp IM.hpp union_find.hpp concurrent_bitset.hpp IM_compact.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) IM.cpp -o IM
 
 # connect: connect.h connect.cpp ldd.hpp $(COMMON)

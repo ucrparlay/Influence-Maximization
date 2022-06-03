@@ -18,6 +18,7 @@
 #include <ios>
 #include <unistd.h>
 #include <string.h>
+#include "../get_time.hpp"
 
 using namespace std;
 
@@ -83,7 +84,9 @@ int main(int argc, char * argv[])
     sprintf(outfile, "BasicStaticGreedy_R%d_k%d.txt", R, set_size);
 
     int start_time = clock();
+    timer tt;
     seeds = BasicStaticGreedy::GetSeeds(R, set_size);
+    cout << "total time: " << tt.stop() << endl;
     int end_time = clock();
     time = end_time - start_time;
 
@@ -103,15 +106,14 @@ int main(int argc, char * argv[])
   }
 
   //output result
-  FILE* out = fopen(outfile, "w");
-  fprintf(out,"BasicStaticGreedy config: R=%d\n", R);
-  fprintf(out,"Time-consuming: T=%f sec\n", (double)(time)/CLOCKS_PER_SEC);
-  fprintf(out,"Influence-spread: I=%f\n",influence);
-  fprintf(out,"Seeds:\n");
+  printf("BasicStaticGreedy config: R=%d\n", R);
+  printf("Time-consuming: T=%f sec\n", (double)(time)/CLOCKS_PER_SEC);
+  printf("Influence-spread: I=%f\n",influence);
+  printf("Seeds:\n");
   for (int i = 0; i < set_size; i++) {
-      fprintf(out, "%d\n", seeds[i]);
+      printf("%d ", seeds[i]);
   }
-  fclose(out);
+  printf("\n");
 
   return 1;
 }

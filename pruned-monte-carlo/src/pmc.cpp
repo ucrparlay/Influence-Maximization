@@ -5,6 +5,7 @@
 #include <stack>
 #include <algorithm>
 #include "pmc.hpp"
+#include "../../get_time.hpp"
 
 using namespace std;
 
@@ -297,6 +298,7 @@ vector<int> InfluenceMaximizer::run(vector<pair<pair<int, int>, double> > &es,
 	vector<PrunedEstimater> infs(R);
 	vector<int> seeds;
 
+  timer init_timer;
 	for (int t = 0; t < R; t++) {
 		Xorshift xs = Xorshift(t);
 
@@ -342,7 +344,9 @@ vector<int> InfluenceMaximizer::run(vector<pair<pair<int, int>, double> > &es,
 
 		infs[t].init(nscc, es2, comp);
 	}
-
+  cout << "init time: " << init_timer.stop() << endl;
+  
+  timer seed_timer;
 	vector<long long> gain(n);
 	vector<int> S;
 
@@ -363,6 +367,7 @@ vector<int> InfluenceMaximizer::run(vector<pair<pair<int, int>, double> > &es,
 		}
 		seeds.push_back(next);
 	}
+  cout << "get seed time: " << seed_timer.stop() << endl;
 	return seeds;
 }
 

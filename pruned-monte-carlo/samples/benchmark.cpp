@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
   timer tm;
 	InfluenceMaximizer im;
 	vector<int> seeds = im.run(es, k, R);
-  cout << "time: " << tm.stop() << endl;
+  cout << "total time: " << tm.stop() << endl;
 
   cout << "seeds:\n";
 	for (int i = 0; i < k; i++) {
