@@ -6,6 +6,7 @@ scc
 bfs
 ldd
 union_find
+tarjan_scc
 log
 data/*
 general_cascade

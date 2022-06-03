@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
     cout << "UIC" << endl;
     AssignUniWeight(graph,w);
   }
-  Hash_Edge hash_edge{graph_id, true};
+  Hash_Edge hash_edge{graph_id, (NodeId)graph.n, true};
   timer t;
   SCC SCC_P(graph);
   SCC_P.front_thresh = P.getOptionInt("-thresh", 1000000000);

@@ -190,7 +190,7 @@ class hashbag {
     size_t len = bag_size[pointer];
     auto pred =
         delayed_seq<bool>(len, [&](size_t i) { return pool[i] != empty; });
-    size_t ret = pack_into(pool.cut(0, len), pred, make_slice(out));
+    size_t ret = pack_into_uninitialized(pool.cut(0, len), pred, make_slice(out));
     clear();
     return ret;
   }
@@ -202,7 +202,7 @@ class hashbag {
     size_t len = bag_size[pointer];
     auto pred = delayed_seq<bool>(
         len, [&](size_t i) { return pool_stamp[i] == current_stamp; });
-    size_t ret = pack_into(pool.cut(0, len), pred, make_slice(out));
+    size_t ret = pack_into_uninitialized(pool.cut(0, len), pred, make_slice(out));
     for (int i = 0; i <= pointer; i++) {
       counter[i] = 0;
     }

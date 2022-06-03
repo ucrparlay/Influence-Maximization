@@ -21,6 +21,6 @@ int main(int argc, char* argv[]) {
     AssignUniWeight(graph, w);
   }
   cout << "n: " << graph.n << " m: " << graph.m << endl;
-  // WriteSampledGraph(graph, outfile);
+  WriteSampledGraph(graph, outfile);
   return 0;
 }

@@ -61,6 +61,8 @@ general_cascade: general_cascade.cpp general_cascade.hpp $(COMMON)
 
 scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp
 	$(CC) $(CPPFLAGS) scc.cpp -o scc
+tarjan_scc: tarjan_scc.hpp tarjan_scc.cpp $(COMMON)
+	$(CC) $(CPPFLAGS) tarjan_scc.cpp -o tarjan_scc
 
 reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
 	$(CC) $(CPPFLAGS) reach.cpp -o reach

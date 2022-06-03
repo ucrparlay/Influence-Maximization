@@ -79,7 +79,7 @@ void REACH::front_sparse2dense() {
 
 void REACH::front_dense2sparse() {
   auto identity = delayed_seq<NodeId>(n, [&](size_t i) { return i; });
-  pack_into(identity, dense_front, front);
+  parlay::pack_into_uninitialized(identity, dense_front, front);
 }
 
 bool REACH::judge() {
