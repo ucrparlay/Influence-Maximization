@@ -10,12 +10,12 @@
 using namespace std;
 
 
-void SCC_status(sequence<size_t> label, size_t n) {
+void SCC_status(sequence<size_t> labels, size_t n) {
   sequence<NodeId> flag(n + 1);
   parallel_for(0, n + 1, [&](NodeId i) { flag[i] = 0; });
   for (size_t i = 0; i < n; i++) {
     size_t label = labels[i] & VAL_MASK;
-    flags[label]++;
+    flag[label]++;
   }
   // cout << "n_scc = " << sequence::sum(flag, n, [&](NodeId label_size){return
   // label_size!=0;}) << endl;

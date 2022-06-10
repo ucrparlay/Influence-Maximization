@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
   NodeId source = P.getOptionInt("-r", (NodeId)0);
   int repeat = P.getOptionInt("-t", (int)3);
   bool local = P.getOption("-local");
-  Hash_Edge hash_edge{graph_id, true};
+  Hash_Edge hash_edge{graph_id, (NodeId)graph.n,true};
   timer t;
   REACH_P.reach(source, dst, hash_edge, local);
   double reach_cost;

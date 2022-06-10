@@ -176,7 +176,7 @@ int SCC::multi_search(sequence<size_t>& labels,
 
   size_t block_front = ceil(24000000 / sub_n_front);
   size_t block_size = min(block_front, (size_t)512);
-  #if defined(DEBUG)
+  #if defined(SPARSE_BREAK)
   cout << "BLOCK_SIZE " << block_size << endl;
   #endif
   while (sub_n_front > 0) {
@@ -292,6 +292,7 @@ int SCC::multi_search_safe(sequence<size_t>& labels,
     int round;
     while ((round = multi_search(labels, table, hash_edge, forward, local))== -1){
       cout << "trigger table resize" << endl;
+      parallel_for(0, graph.n, [&](size_t i){bits[i] = 0;});
       table.double_size();
     }
     return round; 
@@ -332,7 +333,7 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
 #if defined(BREAKDOWN)
   init_timer.stop();
 #endif
-  #if defined(DEBUG)
+  #if defined(SPARSE_BREAK)
   cout << "------------------------------------" << endl;
   cout << "initial time " << scc_timer.stop() << endl;
   scc_timer.start();
@@ -343,7 +344,21 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
   label_offset = ZEROS.size() + 1;
 
   // ----------------first round, for the BIG SCC -------------------------
-  NodeId source = P[0];
+  auto deg_im_f = [&](size_t i) {
+    return std::make_tuple(P[i], graph.offset[P[i]+1]-graph.offset[P[i]]);
+  };
+  auto deg_im = parlay::delayed_seq<std::tuple<NodeId, EdgeId>>(graph.n, deg_im_f);
+  auto red_f = [](const std::tuple<NodeId, EdgeId>& l,
+                  const std::tuple<NodeId, EdgeId>& r) {
+        return (std::get<1>(l) > std::get<1>(r)) ? l : r;
+  };
+  auto id = std::make_tuple<NodeId, EdgeId>(0, 0);
+  auto monoid = parlay::make_monoid(red_f, id);
+  std::tuple<NodeId, EdgeId> sAndD =
+      parlay::reduce(deg_im, monoid);
+  NodeId source = std::get<0>(sAndD);
+
+  // NodeId source = P[0];
 // BFS BFS_P(graph);
 #if defined(BREAKDOWN)
   first_round_timer.start();
@@ -351,7 +366,7 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
   REACH REACH_P(graph);
   hash_edge.forward = true;
   REACH_P.reach(source, dist_1, hash_edge, local_reach);
-  #if defined(DEBUG)
+  #if defined(SPARSE_BREAK)
   long bfs_forward_depth  = REACH_P.num_round;
   #endif
 
@@ -361,11 +376,11 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
 
   // bfs_backward_time = first_round_timer.stop();
   // first_round_timer.start();
-  #if defined(DEBUG)
+  #if defined(SPARSE_BREAK)
   long  bfs_backward_depth = REACH_P.num_round;
   #endif
   
-  #if defined(DEBUG)
+  #if defined(SPARSE_BREAK)
   cout << "first round, "
        << "source " << source << " bfs_forward_depth " << bfs_forward_depth
        << " bfs_backward_depth " << bfs_backward_depth << endl;
@@ -384,12 +399,12 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
 #if defined(BREAKDOWN)
   first_round_timer.stop();
 #endif
-#if defined(DEBUG)
+#if defined(SPARSE_BREAK)
   cout << "First Round Time " << scc_timer.stop() << endl;
   scc_timer.start();
 #endif
   label_offset++;
-  #if defined(DEBUG)
+  #if defined(SPARSE_BREAK)
   cout << "After first round, |FRONT| = " << centers.size()
        << " vertices remain. Total done = " << P.size() - centers.size()
        << endl;
@@ -416,7 +431,7 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
 
     step_size = ceil(step_size * beta);
     cur_round++;
-    #if defined(DEBUG)
+    #if defined(SPARSE_BREAK)
     cout << "round = " << cur_round << " ";
     #endif
     auto pred = delayed_seq<bool>(vs_size, [&](NodeId i) {
@@ -424,7 +439,7 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
     });
     n_front = parlay::pack_into_uninitialized(centers.cut(cur_offset, end), pred, make_slice(front));
     cur_offset = end;
-    #if defined(DEBUG)
+    #if defined(SPARSE_BREAK)
     cout << "n_front = " << n_front << ", origin was " << vs_size
          << " Total vertices remaining = " << n_remaining - finished << endl;
     #endif
@@ -439,7 +454,7 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
     table_forw =
         gbbs::resizable_table<K, V, hash_kv>(out_table_m, empty, hash_kv());
     hash_edge.forward = true;
-    #if defined(DEBUG)
+    #if defined(SPARSE_BREAK)
     int out_depth = multi_search_safe(labels, table_forw, hash_edge, true, local_scc);
     double forward_time = 0;
     forward_time = t_search.stop();
@@ -459,7 +474,7 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
     table_back =
         gbbs::resizable_table<K, V, hash_kv>(in_table_m, empty, hash_kv());
     hash_edge.forward = false;
-    #if defined(DEBUG)
+    #if defined(SPARSE_BREAK)
     int in_depth = multi_search_safe(labels, table_back, hash_edge, false, local_scc);
     double backward_time = 0;
     backward_time = t_search.stop();
@@ -469,7 +484,7 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
 
 
     label_offset += n_front;
-    #if defined(BREAKDOWN)
+    #if defined(SPARSE_BREAK)
     std::cout << "in_table, m = " << table_back.m << " ne = " << table_back.ne
               << "\n";
     std::cout << "out_table, m = " << table_forw.m << " ne = " << table_forw.ne
@@ -517,7 +532,7 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
 
     // in_table.del();
     // out_table.del();
-    #if defined(DEBUG)
+    #if defined(SPARSE_BREAK)
     double round_time = 0;
     round_time = t_round.stop();
     cout << "Round time " << round_time << " " << endl;

@@ -2,6 +2,10 @@ ifdef BREAKDOWN
 BREAK = -DBREAKDOWN
 endif
 
+ifdef SPARSE_BREAK
+SP_BREAK = -DSPARSE_BREAK
+endif
+
 ifdef NLONG
 INTN = -DNLONG
 endif
@@ -17,7 +21,7 @@ else
 CC = g++
 endif
 
-CPPFLAGS = -std=c++17 -Wall -Wextra -Werror $(INTN) $(INTE) $(BREAK)
+CPPFLAGS = -std=c++17 -Wall -Wextra -Werror $(INTN) $(INTE) $(BREAK) $(SP_BREAK)
 
 ifdef CILKPLUS
 CPPFLAGS += -DPARLAY_CILKPLUS -DCILK -fcilkplus
@@ -59,7 +63,7 @@ IM: IM.cpp IM.hpp union_find.hpp $(COMMON)
 general_cascade: general_cascade.cpp general_cascade.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) general_cascade.cpp -o general_cascade
 
-scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp
+scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp 
 	$(CC) $(CPPFLAGS) scc.cpp -o scc
 tarjan_scc: tarjan_scc.hpp tarjan_scc.cpp $(COMMON)
 	$(CC) $(CPPFLAGS) tarjan_scc.cpp -o tarjan_scc

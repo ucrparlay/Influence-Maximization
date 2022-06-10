@@ -1,11 +1,18 @@
 #include "tarjan_scc.hpp"
 
 #include <algorithm>  // std::max
+#include <unordered_set>
 
 #include "get_time.hpp"
 #include "parseCommandLine.hpp"
 
 using namespace std;
+
+struct hashFunction{
+  size_t operator()(const pair<NodeId, NodeId>& edge) const{
+    return _hash(_hash(edge.first)+edge.second);
+  }
+};
 
 void SCC_status(sequence<NodeId> label, size_t n) {
   sequence<NodeId> flag(n + 1);
@@ -14,14 +21,13 @@ void SCC_status(sequence<NodeId> label, size_t n) {
     flag[label[i]]++;
   }
 
-  // cout << "n_scc = " << parlay::count_if(flag, [&](NodeId label_size){return
-  // label_size!=0;}) << endl; cout << "Largest StronglyConnectedComponents has
-  // "
-  // << parlay::reduce(flag, maxm<NodeId>()) << endl;
-  cout << parlay::count_if(flag, [&](NodeId label_size) {
-    return label_size != 0;
-  }) << '\n';
-  cout << parlay::reduce(flag, maxm<NodeId>()) << '\n';
+  cout << "n_scc = " << parlay::count_if(flag, [&](NodeId label_size){return label_size!=0;}) << endl;
+  cout << "Largest StronglyConnectedComponents has " << parlay::reduce(flag, maxm<NodeId>()) << endl;
+  
+  // cout << parlay::count_if(flag, [&](NodeId label_size) {
+  //   return label_size != 0;
+  // }) << '\n';
+  // cout << parlay::reduce(flag, maxm<NodeId>()) << '\n';
 }
 
 int main(int argc, char** argv) {
@@ -58,8 +64,22 @@ int main(int argc, char** argv) {
       cout << scc_cost << endl;
     }
   }
-  // cout << "average cost " << t.get_total()/repeat << endl;
-  if (P.getOption("-status")) SCC_status(SCC_P.scc, graph.n);
+  cout << "average cost " << t.get_total()/repeat << endl;
+  if (P.getOption("-status")){
+    SCC_status(SCC_P.scc, graph.n);
+    unordered_set<pair<NodeId,NodeId>, hashFunction> edge_set;
+    for (size_t i = 0; i<graph.n; i++){
+      NodeId u = i;
+      for (size_t j = graph.offset[i]; j<graph.offset[i+1]; j++){
+        NodeId v = graph.E[j];
+        float w = graph.W[j];
+        if (hash_edge(u,v,w) && SCC_P.scc[u]!= SCC_P.scc[v]){
+          edge_set.insert(make_pair(SCC_P.scc[u], SCC_P.scc[v]));
+        }
+      }
+    }
+    cout << "number of inter_scc edges = " << edge_set.size() << endl;
+  }
 
   return 0;
 }
