@@ -8,6 +8,7 @@ ldd
 union_find
 tarjan_scc
 log
+sample_graph.sh
 data/*
 general_cascade
 seeds_*

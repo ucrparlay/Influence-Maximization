@@ -347,7 +347,7 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
   auto deg_im_f = [&](size_t i) {
     return std::make_tuple(P[i], graph.offset[P[i]+1]-graph.offset[P[i]]);
   };
-  auto deg_im = parlay::delayed_seq<std::tuple<NodeId, EdgeId>>(graph.n, deg_im_f);
+  auto deg_im = parlay::delayed_seq<std::tuple<NodeId, EdgeId>>(P.size(), deg_im_f);
   auto red_f = [](const std::tuple<NodeId, EdgeId>& l,
                   const std::tuple<NodeId, EdgeId>& r) {
         return (std::get<1>(l) > std::get<1>(r)) ? l : r;

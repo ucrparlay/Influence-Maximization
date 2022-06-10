@@ -1,8 +1,8 @@
 #!/bin/bash
-# FILE_OUT=/home/lwang323/IM/data/sample_scc_plain.txt
+FILE_OUT=/home/lwang323/IM/data/sample_scc_plain.txt
 # FILE_OUT=/home/lwang323/IM/data/sample_scc_local1.txt
 # FILE_OUT=/home/lwang323/IM/data/sample_scc_final.txt
-FILE_OUT=/home/lwang323/IM/data/sample_scc_tarjan.txt
+# FILE_OUT=/home/lwang323/IM/data/sample_scc_tarjan.txt
 # FILE_OUT_DIR=//home/lwang323/IM/data/SCC
 FILE_OUT_DIR=/data/lwang323/graph/bin
 BINARY_DATA_PATH_LARGE=/data/graphs/bin
@@ -28,7 +28,7 @@ grid_1000_10000_03 \
 "
 
 
-COMMOND=tarjan_scc
+COMMOND=scc 
 ulimit -s unlimited
 # WIC
 echo "WIC"
