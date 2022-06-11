@@ -20,4 +20,4 @@ if __name__ == '__main__':
     # graphs = graph.get_all_graphs()
     # for g in graphs:
     #     run_im(g)
-    run_im('/data/graphs/bin/com-orkut_sym.bin')
+    run_im('/data/graphs/bin/Cosmo50_5_sym.bin')

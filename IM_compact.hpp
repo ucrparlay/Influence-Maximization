@@ -11,7 +11,7 @@
 using namespace std;
 using namespace parlay;
 
-const int BITSET_SIZE = 3072627;
+const int BITSET_SIZE = 321065547;  // >= n
 
 class CompactInfluenceMaximizer {
  private:
