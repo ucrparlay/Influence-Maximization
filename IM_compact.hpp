@@ -3,7 +3,6 @@
 #include <optional>
 #include <unordered_set>
 
-#include "concurrent_bitset.hpp"
 #include "get_time.hpp"
 #include "graph.hpp"
 #include "parlay/sequence.h"
@@ -11,56 +10,59 @@
 using namespace std;
 using namespace parlay;
 
-const int BITSET_SIZE = 321065547;  // >= n
-
 class CompactInfluenceMaximizer {
  private:
   size_t n, m, R, center_cnt;
   Graph& G;
   float compact_rate;
-  sequence<bool> is_center;
+  sequence<Hash_Edge> hash_edges;
+  sequence<bool> is_center, is_seed;
   sequence<size_t> center_id;
-  vector<folly::ConcurrentBitSet<BITSET_SIZE>> visit;
   sequence<sequence<size_t>> sketches;
 
-  pair<optional<NodeId>, vector<NodeId>> get_center(size_t graph_id, NodeId x);
+  tuple<optional<NodeId>, bool, size_t> get_center(size_t graph_id, NodeId x);
 
  public:
   CompactInfluenceMaximizer() = delete;
   CompactInfluenceMaximizer(Graph& graph, float compact_rate, size_t R)
       : R(R), G(graph), compact_rate(compact_rate) {
     assert(G.symmetric);
-    assert(BITSET_SIZE >= graph.n);
     n = G.n;
     m = G.m;
+    hash_edges = sequence<Hash_Edge>(R);
+    parallel_for(0, R, [&](size_t r) {
+      hash_edges[r].graph_id = r;
+      hash_edges[r].n = G.n;
+      hash_edges[r].forward = true;
+    });
     is_center = sequence<bool>(n);
+    is_seed = sequence<bool>(n);
     center_id = sequence<size_t>(n);
-    visit = vector<folly::ConcurrentBitSet<BITSET_SIZE>>(R);
   }
   void init_sketches();
   sequence<pair<NodeId, float>> select_seeds(int k);
 };
 
-pair<optional<NodeId>, vector<NodeId>> CompactInfluenceMaximizer::get_center(
+tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
     size_t graph_id, NodeId x) {
   vector<NodeId> que = {x};
-  unordered_set<NodeId> in_que;
-  in_que.insert(x);
-  Hash_Edge hash_edge;
-  hash_edge.graph_id = graph_id;
-  hash_edge.n = G.n;
-  hash_edge.forward = true;
+  unordered_set<NodeId> visit;
+  visit.insert(x);
+  const auto& hash_edge = hash_edges[graph_id];
   optional<NodeId> center = {};
   if (is_center[x]) center = x;
+  bool meet_seed = is_seed[x];
   for (unsigned int i = 0; i < que.size(); i++) {
     if (center.has_value()) break;
     auto u = que[i];
     for (auto j = G.offset[u]; j < G.offset[u + 1]; j++) {
       auto v = G.E[j];
-      auto w = G.W[j];
-      if (hash_edge(u, v, w) && in_que.find(v) == in_que.end()) {
+      if (u < v && hash_edge(u, v, G.W[j]) && visit.find(v) == visit.end()) {
         que.push_back(v);
-        in_que.insert(v);
+        visit.insert(v);
+        if (is_seed[v]) {
+          meet_seed = true;
+        }
         if (is_center[v]) {
           center = v;
           break;
@@ -68,7 +70,7 @@ pair<optional<NodeId>, vector<NodeId>> CompactInfluenceMaximizer::get_center(
       }
     }
   }
-  return {center, que};
+  return {center, meet_seed, visit.size()};
 }
 
 void CompactInfluenceMaximizer::init_sketches() {
@@ -94,31 +96,24 @@ void CompactInfluenceMaximizer::init_sketches() {
       gbbs::unite_variants::UniteRemCAS<decltype(splice), decltype(find),
                                         find_atomic_halve>(find, splice);
   sequence<sequence<NodeId>> labels(R, sequence<NodeId>(center_cnt));
-  sequence<Hash_Edge> hash_edges(R);
   parallel_for(0, R, [&](size_t r) {
-    hash_edges[r].graph_id = r;
-    hash_edges[r].n = G.n;
-    hash_edges[r].forward = true;
     parallel_for(0, center_cnt, [&](size_t i) { labels[r][i] = i; });
   });
-  parallel_for(0, G.n, [&](size_t i) {
-    NodeId u = i;
-    parallel_for(G.offset[i], G.offset[i + 1], [&](size_t j) {
-      NodeId v = G.E[j];
-      float w = G.W[j];
-      parallel_for(0, R, [&](size_t r) {
-        if (hash_edges[r](u, v, w)) {
-          optional<NodeId> u_center = get_center(r, u).first;
-          optional<NodeId> v_center = get_center(r, v).first;
-          if (u_center.has_value() && v_center.has_value()) {
-            auto u_center_id = center_id[u_center.value()];
-            auto v_center_id = center_id[v_center.value()];
-            assert(u_center_id < center_cnt);
-            assert(v_center_id < center_cnt);
-            unite(u_center_id, v_center_id, labels[r]);
-          }
+  parallel_for(0, R, [&](size_t r) {
+    parallel_for(0, G.n, [&](size_t i) {
+      NodeId u = i;
+      auto u_center = std::get<0>(get_center(r, u));
+      if (!u_center.has_value()) return;
+      for (auto j = G.offset[i]; j < G.offset[i + 1]; j++) {
+        NodeId v = G.E[j];
+        if (hash_edges[r](u, v, G.W[j])) {
+          auto v_center = std::get<0>(get_center(r, v));
+          if (!v_center.has_value()) return;
+          auto u_center_id = center_id[u_center.value()];
+          auto v_center_id = center_id[v_center.value()];
+          unite(u_center_id, v_center_id, labels[r]);
         }
-      });
+      }
     });
   });
 
@@ -152,7 +147,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
       size_t new_influence = 0;
       if (influence[i] >= max_influence) {
         for (size_t r = 0; r < R; r++) {
-          auto [center, que] = get_center(r, i);
+          auto [center, meet_seed, num] = get_center(r, i);
           if (center.has_value()) {
             auto c = center_id[center.value()];
             auto p = sketches[r][c];
@@ -161,8 +156,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
             }
             new_influence += p & VAL_MASK;
           } else {
-            if (!visit[r].test(i)) {
-              new_influence += que.size();
+            if (!meet_seed) {
+              new_influence += num;
             }
           }
         }
@@ -177,8 +172,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     float influence_gain = max_influence / (R + 0.0);
     seeds[round] = {seed, influence_gain};
     influence[seed] = 0;
+    is_seed[seed] = true;
     parallel_for(0, R, [&](size_t r) {
-      auto [center, que] = get_center(r, seed);
+      auto center = std::get<0>(get_center(r, seed));
       if (center.has_value()) {
         auto c = center_id[center.value()];
         auto p = sketches[r][c];
@@ -186,10 +182,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
           sketches[r][p] = TOP_BIT | 0;
         } else {
           sketches[r][c] = TOP_BIT | 0;
-        }
-      } else {
-        for (auto u : que) {
-          visit[r].set(u);
         }
       }
     });
