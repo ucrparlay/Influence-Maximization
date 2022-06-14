@@ -17,7 +17,7 @@ def run_im(graph):
 
 
 if __name__ == '__main__':
-    graphs = graph.get_all_graphs()
-    for g in graphs:
-        run_im(g)
-    # run_im('/data/lwang323/graph/bin/Youtube_sym.bin')
+    # graphs = graph.get_all_graphs()
+    # for g in graphs:
+    #     run_im(g)
+    run_im('/data/graphs/bin/soc-LiveJournal1_sym.bin')

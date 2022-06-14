@@ -57,7 +57,8 @@ tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
     auto u = que[i];
     for (auto j = G.offset[u]; j < G.offset[u + 1]; j++) {
       auto v = G.E[j];
-      if (u < v && hash_edge(u, v, G.W[j]) && visit.find(v) == visit.end()) {
+      if ((u < v ? hash_edge(u, v, G.W[j]) : hash_edge(v, u, G.W[j])) &&
+          visit.find(v) == visit.end()) {
         que.push_back(v);
         visit.insert(v);
         if (is_seed[v]) {
@@ -99,28 +100,35 @@ void CompactInfluenceMaximizer::init_sketches() {
   parallel_for(0, R, [&](size_t r) {
     parallel_for(0, center_cnt, [&](size_t i) { labels[r][i] = i; });
   });
-  parallel_for(0, R, [&](size_t r) {
-    parallel_for(0, G.n, [&](size_t i) {
-      NodeId u = i;
+  sequence<NodeId> belong(n);
+  for (size_t r = 0; r < R; r++) {
+    parallel_for(0, n, [&](size_t u) {
       auto u_center = std::get<0>(get_center(r, u));
-      if (!u_center.has_value()) return;
-      for (auto j = G.offset[i]; j < G.offset[i + 1]; j++) {
-        NodeId v = G.E[j];
-        if (hash_edges[r](u, v, G.W[j])) {
-          auto v_center = std::get<0>(get_center(r, v));
-          if (!v_center.has_value()) return;
-          auto u_center_id = center_id[u_center.value()];
-          auto v_center_id = center_id[v_center.value()];
-          unite(u_center_id, v_center_id, labels[r]);
+      if (u_center.has_value()) {
+        belong[u] = u_center.value();
+      } else {
+        belong[u] = n + 1;
+      }
+    });
+    parallel_for(0, n, [&](size_t u) {
+      for (auto j = G.offset[u]; j < G.offset[u + 1]; j++) {
+        auto v = G.E[j];
+        if (u < v && hash_edges[r](u, v, G.W[j])) {
+          if (belong[u] != n + 1 && belong[v] != n + 1) {
+            if (belong[u] != belong[v]) {
+              auto u_center_id = center_id[belong[u]];
+              auto v_center_id = center_id[belong[v]];
+              unite(u_center_id, v_center_id, labels[r]);
+            }
+          }
         }
       }
     });
-  });
+  }
 
   parallel_for(0, R, [&](size_t r) {
-    parallel_for(
-        0, center_cnt, [&](size_t i) { sketches[r][i] = find(i, labels[r]); },
-        1024);
+    parallel_for(0, center_cnt,
+                 [&](size_t i) { sketches[r][i] = find(i, labels[r]); });
     sequence<NodeId> hist(center_cnt);
     parallel_for(0, center_cnt, [&](size_t i) { hist[i] = 0; });
     for (size_t i = 0; i < center_cnt; i++) {
