@@ -105,42 +105,38 @@ void CompactInfluenceMaximizer::init_sketches() {
     parallel_for(0, n, [&](size_t u) {
       auto u_center = std::get<0>(get_center(r, u));
       if (u_center.has_value()) {
-        belong[u] = u_center.value();
+        belong[u] = center_id[u_center.value()];
       } else {
-        belong[u] = n + 1;
+        belong[u] = center_cnt;
       }
     });
+    auto have = histogram_by_index(belong, center_cnt + 1);
+    assert(have.size() == center_cnt + 1);
     parallel_for(0, n, [&](size_t u) {
       for (auto j = G.offset[u]; j < G.offset[u + 1]; j++) {
         auto v = G.E[j];
         if (u < v && hash_edges[r](u, v, G.W[j])) {
-          if (belong[u] != n + 1 && belong[v] != n + 1) {
+          if (belong[u] < center_cnt && belong[v] < center_cnt) {
             if (belong[u] != belong[v]) {
-              auto u_center_id = center_id[belong[u]];
-              auto v_center_id = center_id[belong[v]];
-              unite(u_center_id, v_center_id, labels[r]);
+              unite(belong[u], belong[v], labels[r]);
             }
           }
         }
       }
     });
-  }
-
-  parallel_for(0, R, [&](size_t r) {
     parallel_for(0, center_cnt,
                  [&](size_t i) { sketches[r][i] = find(i, labels[r]); });
-    sequence<NodeId> hist(center_cnt);
-    parallel_for(0, center_cnt, [&](size_t i) { hist[i] = 0; });
+    sequence<NodeId> hist(center_cnt, 0);
     for (size_t i = 0; i < center_cnt; i++) {
       NodeId p_label = sketches[r][i];
-      hist[p_label]++;
+      hist[p_label] += have[i];
     }
     parallel_for(0, hist.size(), [&](size_t i) {
       if (hist[i] != 0) {
         sketches[r][i] = TOP_BIT | (size_t)hist[i];
       }
     });
-  });
+  }
 
   cout << "init_sketches time: " << tt.stop() << endl;
 }
@@ -148,12 +144,12 @@ void CompactInfluenceMaximizer::init_sketches() {
 sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   timer tt;
   sequence<pair<NodeId, float>> seeds(k);
-  sequence<size_t> influence(n, n + 1);
+  sequence<size_t> influence(n);
   for (int round = 0; round < k; round++) {
     size_t max_influence = 0;
     parallel_for(0, n, [&](size_t i) {
       size_t new_influence = 0;
-      if (influence[i] >= max_influence) {
+      if (round == 0 || influence[i] >= max_influence) {
         for (size_t r = 0; r < R; r++) {
           auto [center, meet_seed, num] = get_center(r, i);
           if (center.has_value()) {
