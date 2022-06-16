@@ -68,8 +68,8 @@ void union_find(const Graph& graph, int R, sequence<sequence<size_t>>& sketches)
       float w = graph.W[j];
       parallel_for(0, R, [&](size_t r){
         // Hash_Edge hash_edge = Hash_Edge{(NodeId)i, true};
-        // unite(u,v,labels[r]);
-        if (u < v ? hash_edges[r](u,v,w): hash_edges[r](v,u,w)){
+        // must be undirected graph
+        if (u < v && hash_edges[r](u,v,w)){
           unite(u,v,labels[r]);
         }
       });

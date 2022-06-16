@@ -43,6 +43,7 @@ class CompactInfluenceMaximizer {
   sequence<pair<NodeId, float>> select_seeds(int k);
 };
 
+// space: O(n / center_cnt)
 tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
     size_t graph_id, NodeId x) {
   vector<NodeId> que = {x};
@@ -107,7 +108,7 @@ void CompactInfluenceMaximizer::init_sketches() {
       if (u_center.has_value()) {
         belong[u] = center_id[u_center.value()];
       } else {
-        belong[u] = center_cnt;
+        belong[u] = center_cnt;  // center not found
       }
     });
     auto have = histogram_by_index(belong, center_cnt + 1);
