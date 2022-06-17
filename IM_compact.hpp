@@ -46,13 +46,15 @@ class CompactInfluenceMaximizer {
 // space: O(n / center_cnt)
 tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
     size_t graph_id, NodeId x) {
+  optional<NodeId> center = {};
+  if (is_center[x]) {
+    return {x, false, 1};
+  }
+  bool meet_seed = is_seed[x];
   vector<NodeId> que = {x};
   unordered_set<NodeId> visit;
   visit.insert(x);
   const auto& hash_edge = hash_edges[graph_id];
-  optional<NodeId> center = {};
-  if (is_center[x]) center = x;
-  bool meet_seed = is_seed[x];
   for (unsigned int i = 0; i < que.size(); i++) {
     if (center.has_value()) break;
     auto u = que[i];
@@ -111,8 +113,6 @@ void CompactInfluenceMaximizer::init_sketches() {
         belong[u] = center_cnt;  // center not found
       }
     });
-    auto have = histogram_by_index(belong, center_cnt + 1);
-    assert(have.size() == center_cnt + 1);
     parallel_for(0, n, [&](size_t u) {
       for (auto j = G.offset[u]; j < G.offset[u + 1]; j++) {
         auto v = G.E[j];
@@ -127,12 +127,13 @@ void CompactInfluenceMaximizer::init_sketches() {
     });
     parallel_for(0, center_cnt,
                  [&](size_t i) { sketches[r][i] = find(i, labels[r]); });
-    sequence<NodeId> hist(center_cnt, 0);
-    for (size_t i = 0; i < center_cnt; i++) {
-      NodeId p_label = sketches[r][i];
-      hist[p_label] += have[i];
-    }
-    parallel_for(0, hist.size(), [&](size_t i) {
+    parallel_for(0, n, [&](size_t i) {
+      if (belong[i] < center_cnt) {
+        belong[i] = sketches[r][belong[i]];
+      }
+    });
+    auto hist = histogram_by_index(belong, center_cnt + 1);
+    parallel_for(0, center_cnt, [&](size_t i) {
       if (hist[i] != 0) {
         sketches[r][i] = TOP_BIT | (size_t)hist[i];
       }
