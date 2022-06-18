@@ -45,7 +45,7 @@ endif
 
 COMMON = graph.hpp parseCommandLine.hpp utilities.h get_time.hpp
 
-all: graph IM union_find reach general_cascade
+all: graph IM general_cascade scc tarjan_scc reach union_find
 
 	
 graph: graph.cpp $(COMMON)
@@ -75,4 +75,4 @@ union_find: union_find.cpp union_find.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) union_find.cpp -o union_find
 
 clean:
-	rm -f graph IM union_find
+	rm -f graph IM general_cascade scc tarjan_scc reach union_find
