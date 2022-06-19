@@ -21,9 +21,9 @@ def run_im_all():
         run_im(g, 0.1)
     for g in graph.get_large_graphs():
         run_im(g, 0.1)
-    for g in graph.get_grid_graphs():
-        run_im(g, 0.2)
     for g in graph.get_knn_graphs():
+        run_im(g, 0.2)
+    for g in graph.get_grid_graphs():
         run_im(g, 0.2)
 
 
@@ -42,13 +42,14 @@ def run_im_compact_all():
             run_im_compact(g, 0.1, compact)
         for g in graph.get_large_graphs():
             run_im_compact(g, 0.1, compact)
-        for g in graph.get_grid_graphs():
-            run_im_compact(g, 0.2, compact)
         for g in graph.get_knn_graphs():
+            run_im_compact(g, 0.2, compact)
+        for g in graph.get_grid_graphs():
             run_im_compact(g, 0.2, compact)
 
 
 if __name__ == '__main__':
-    # run_im('/data/graphs/bin/Germany_sym.bin', 0.1)
+    # run_im('/data/lwang323/graph/bin/HepPh_sym.bin', 0.1)
+    # run_im_compact('/data/lwang323/graph/bin/HepPh_sym.bin', 0.1, 1.0)
     run_im_all()
-    # run_im_compact_all()
+    run_im_compact_all()

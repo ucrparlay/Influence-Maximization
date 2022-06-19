@@ -2,15 +2,6 @@ import os
 import re
 
 
-def reorder(a):
-    assert len(a) == 21
-    b = a[-5:]
-    a = a[:-5]
-    c = a[-4:]
-    a = a[:-4] + b + c
-    return a
-
-
 def analyse_im():
     f1 = open(f'im_results.txt', 'r')
     f2 = open(f'im_mem.txt', 'r')
@@ -22,12 +13,10 @@ def analyse_im():
     init_time = re.findall('init_sketches:.*', res)
     assert len(init_time) == 21
     init_time = list(map(lambda x: float(x.split(' ')[-1]), init_time))
-    init_time = reorder(init_time)
 
     seed_time = re.findall('select time:.*', res)
     assert len(seed_time) == 21
     seed_time = list(map(lambda x: float(x.split(' ')[-1]), seed_time))
-    seed_time = reorder(seed_time)
 
     total_time = []
     for i in range(21):
@@ -36,7 +25,6 @@ def analyse_im():
     memory_kb = re.findall('Maximum resident set size.*', mem)
     assert len(memory_kb) == 21
     memory_kb = list(map(lambda x: int(x.split(' ')[-1]), memory_kb))
-    memory_kb = reorder(memory_kb)
 
     memory_gb = list(map(lambda x: x / 1000000.0, memory_kb))
 
@@ -60,12 +48,10 @@ def analyse_compact(compact):
     init_time = re.findall('init_sketches time:.*', res)
     assert len(init_time) == 21
     init_time = list(map(lambda x: float(x.split(' ')[-1]), init_time))
-    init_time = reorder(init_time)
 
     seed_time = re.findall('select_seeds time:.*', res)
     assert len(seed_time) == 21
     seed_time = list(map(lambda x: float(x.split(' ')[-1]), seed_time))
-    seed_time = reorder(seed_time)
 
     total_time = []
     for i in range(21):
@@ -74,7 +60,6 @@ def analyse_compact(compact):
     memory_kb = re.findall('Maximum resident set size.*', mem)
     assert len(memory_kb) == 21
     memory_kb = list(map(lambda x: int(x.split(' ')[-1]), memory_kb))
-    memory_kb = reorder(memory_kb)
 
     memory_gb = list(map(lambda x: x / 1000000.0, memory_kb))
 
