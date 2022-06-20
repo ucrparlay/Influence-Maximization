@@ -18,8 +18,6 @@
 
 using namespace std;
 
-constexpr size_t TOP_BIT = size_t(UINT_N_MAX) + 1;
-constexpr size_t VAL_MASK = UINT_N_MAX;
 using label_type = size_t;
 
 using K = NodeId;
@@ -33,7 +31,7 @@ struct hash_kv {
 
 class SCC {
  private:
-  Graph& graph;
+  const Graph& graph;
   gbbs::resizable_table<K, V, hash_kv> table_forw;
   gbbs::resizable_table<K, V, hash_kv> table_back;
   hashbag<NodeId> bag;
@@ -72,7 +70,7 @@ class SCC {
   size_t num_round;
   void scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool local1, bool local2);
   SCC() = delete;
-  SCC(Graph& G) : graph(G), bag(G.n) {
+  SCC(const Graph& G) : graph(G), bag(G.n) {
     n = graph.n;
     num_round = 0;
     front = sequence<NodeId>(n);
@@ -159,9 +157,9 @@ int SCC::multi_search(sequence<size_t>& labels,
   table.update_nelms();
   size_t sub_n_front = n_front;
 
-  EdgeId* offset;
-  NodeId* E;
-  float* W;
+  const EdgeId* offset;
+  const NodeId* E;
+  const float* W;
   if (forward) {
     offset = (graph.offset).data();
     E = (graph.E).data();
@@ -370,7 +368,6 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
   long bfs_forward_depth  = REACH_P.num_round;
   #endif
 
-  REACH_P.swap_graph();
   hash_edge.forward = false;
   REACH_P.reach(source, dist_2, hash_edge, local_reach);
 
@@ -385,7 +382,6 @@ void SCC::scc(sequence<size_t>& labels, Hash_Edge& hash_edge, double beta, bool 
        << "source " << source << " bfs_forward_depth " << bfs_forward_depth
        << " bfs_backward_depth " << bfs_backward_depth << endl;
   #endif
-  REACH_P.swap_graph();
   NodeId label = label_offset;
   parallel_for(0, P.size(), [&](size_t i) {
     if ((dist_1[P[i]] != false) && (dist_2[P[i]] != false)) {

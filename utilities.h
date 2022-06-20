@@ -24,6 +24,8 @@ using EdgeId = uint32_t;
 
 constexpr NodeId UINT_N_MAX = numeric_limits<NodeId>::max();
 constexpr EdgeId UINT_E_MAX = numeric_limits<EdgeId>::max();
+constexpr size_t TOP_BIT = size_t(UINT_N_MAX) + 1;
+constexpr size_t VAL_MASK = UINT_N_MAX;
 
 inline size_t num_blocks(size_t n, size_t block_size) {
   if (n == 0)

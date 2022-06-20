@@ -6,8 +6,6 @@
 using namespace std;
 using namespace parlay;
 
-constexpr size_t TOP_BIT = size_t(UINT_N_MAX) + 1;
-constexpr size_t VAL_MASK = UINT_N_MAX;
 
 void union_find( const Graph &graph, Hash_Edge& hash_edge, sequence<size_t>& parents){
   auto find = gbbs::find_variants::find_compress;
