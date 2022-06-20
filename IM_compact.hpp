@@ -114,16 +114,15 @@ void CompactInfluenceMaximizer::init_sketches() {
       }
     });
     parallel_for(0, n, [&](size_t u) {
-      for (auto j = G.offset[u]; j < G.offset[u + 1]; j++) {
+      parallel_for(G.offset[u], G.offset[u + 1], [&](size_t j) {
         auto v = G.E[j];
         if (u < v && hash_edges[r](u, v, G.W[j])) {
-          if (belong[u] < center_cnt && belong[v] < center_cnt) {
-            if (belong[u] != belong[v]) {
-              unite(belong[u], belong[v], labels[r]);
-            }
+          if (belong[u] < center_cnt && belong[v] < center_cnt &&
+              belong[u] != belong[v]) {
+            unite(belong[u], belong[v], labels[r]);
           }
         }
-      }
+      });
     });
     parallel_for(0, center_cnt,
                  [&](size_t i) { sketches[r][i] = find(i, labels[r]); });
