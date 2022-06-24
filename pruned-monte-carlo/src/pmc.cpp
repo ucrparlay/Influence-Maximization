@@ -325,7 +325,7 @@ vector<int> InfluenceMaximizer::run(vector<pair<pair<int, int>, double> > &es,
 		}
 
 		vector<int> comp(n);
-
+		
 		int nscc = scc(comp);
 
 		vector<pair<int, int> > es2;

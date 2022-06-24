@@ -31,7 +31,9 @@ class REACH {
   size_t threshold;
   size_t n;
   size_t sparse_update(sequence<bool>& dst, bool local, Hash_Edge& hash_edge);
+  // size_t sparse_update(sequence<bool>& dst, bool local);
   size_t dense_update(sequence<bool>& dst, Hash_Edge& hash_edge);
+  // size_t dense_update(sequence<bool>& dst);
   void front_sparse2dense();
   void front_dense2sparse();
   bool judge();
@@ -40,7 +42,9 @@ class REACH {
  public:
   size_t num_round;
   void reach_seq(NodeId source, sequence<bool>& dst, Hash_Edge & hash_edge);
+  // void reach_seq(NodeId source, sequence<bool>& dst);
   void reach(NodeId source, sequence<bool>& dst, Hash_Edge &hash_edge, bool local,bool inactive_dense = false);
+  // void reach(NodeId source, sequence<bool>& dst, bool local,bool inactive_dense = false);
   REACH() = delete;
   REACH(const Graph& G) : graph(G), bag(G.n) {
     n = graph.n;

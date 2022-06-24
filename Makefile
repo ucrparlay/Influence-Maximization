@@ -51,7 +51,7 @@ all: graph IM general_cascade scc tarjan_scc reach union_find
 graph: graph.cpp $(COMMON)
 	$(CC) $(CPPFLAGS) graph.cpp -o graph
 
-IM: IM.cpp IM.hpp union_find.hpp IM_compact.hpp PMC.hpp $(COMMON)
+IM: IM.cpp IM.hpp union_find.hpp IM_compact.hpp PMC.hpp PrunedEstimater.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) IM.cpp -o IM
 
 # connect: connect.h connect.cpp ldd.hpp $(COMMON)

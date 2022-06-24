@@ -15,18 +15,19 @@ using namespace std;
 
 class TARJAN_SCC {
  private:
-  Graph& G;
+  const Graph& G;
   stack<NodeId> sk;
   sequence<NodeId> low, dfn;
-  size_t n, cnt, idx;
+  size_t n, idx;
   void dfs(NodeId u, Hash_Edge & hash_edge);
 
  public:
+  size_t cnt;
   sequence<NodeId> scc;
   void tarjan(Hash_Edge & hash_edge);
   void clear();
   TARJAN_SCC() = delete;
-  TARJAN_SCC(Graph& graph) : G(graph) {
+  TARJAN_SCC(const Graph& graph) : G(graph) {
     low = sequence<NodeId>(G.n);
     dfn = sequence<NodeId>(G.n);
     scc = sequence<NodeId>(G.n);

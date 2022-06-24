@@ -282,15 +282,17 @@ sequence<edge> StringToEdgeList(sequence<char> strings, long length){
 
 Graph EdgeListToGraph(sequence<edge> edge_list, NodeId n){
   EdgeId m = edge_list.size();
+  Graph graph;
+  graph.n = n;
+  graph.m = m;
   bool reorder = false;
-  for (long i = edge_list.size()-1; i >= 0; i--){
+  parallel_for (0, m, [&](size_t i){
     NodeId u = edge_list[i].u;
     NodeId v = edge_list[i].v;
     if (u >= n || v >= n){
       reorder = true;
-      break;
     }
-  }
+  });
   if (reorder){
     cout << "Vertices need remapping" << endl;
     std::map<NodeId, NodeId> V_map;
@@ -314,12 +316,11 @@ Graph EdgeListToGraph(sequence<edge> edge_list, NodeId n){
       new_edgelist[i] = edge(V_map[u], V_map[v]);
     });
     edge_list = new_edgelist;
+    graph.n = v_cnt;
   }
   sort_inplace(edge_list);
 
-  Graph graph;
-  graph.n = n;
-  graph.m = m;
+
 
   graph.offset = sequence<EdgeId>(graph.n + 1);
   graph.E = sequence<NodeId>(graph.m);

@@ -25,7 +25,7 @@ private:
 	int sigma(const int v);
 	inline int unique_child(const int v);
 public:
-	void init(int n, vector<pair<int, int> > &es, vector<int> &comp);
+	void init(int n, vector<pair<int, int> > &es, vector<int> &_comp);
 	int sigma1(const int v);
 	void add(int v);
 	void update(vector<long long> &sums);

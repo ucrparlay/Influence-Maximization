@@ -45,6 +45,13 @@ int main(int argc, char* argv[]){
       DirectedInfluenceMaximizer pmc_solver(graph, R);
       pmc_solver.init_sketches();
       cout << "init sketch time: " << t_pmc.stop() << endl; 
+      timer t_select; t_select.start();
+      auto seeds_spread = pmc_solver.select_seeds(k, CELF);
+      cout << "select time: " << t_select.stop()  << endl;
+      for (auto x: seeds_spread) {
+        cout << x.first << " ";
+      }
+      cout << endl;
     }
     
     if (P.getOption("-union_find")){

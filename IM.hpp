@@ -195,7 +195,11 @@ sequence<pair<NodeId,float>> InfluenceMaximizer::select_seeds(int k, size_t R, b
               write_max(&max_influence, new_influence, [](size_t a, size_t b){return a<b;});
             }
         },1024);
-        max_influence_it = parlay::find(make_slice(influence), max_influence);
+        if (CELF){
+          max_influence_it = parlay::find(make_slice(influence), max_influence);
+        }else{
+          max_influence_it = parlay::max_element(influence);
+        }
         seed = max_influence_it - influence.begin();
         influence_gain = max_influence/(R+0.0);
         seeds[t]=make_pair(seed, influence_gain);
