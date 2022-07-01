@@ -8,6 +8,7 @@
 #include "../../get_time.hpp"
 
 using namespace std;
+timer t_first;
 
 inline int PrunedEstimater::unique_child(const int v) {
 	int outdeg = 0, child = -1;
@@ -90,8 +91,10 @@ void PrunedEstimater::init(const int _n, vector<pair<int, int> > &_es,
 	for (int i = 0; i < n1; i++) {
 		weight[comp[i]]++;
 	}
-
+	
+	t_first.start();
 	first();
+	t_first.stop();
 }
 
 int PrunedEstimater::sigma1(const int v) {
@@ -344,9 +347,10 @@ vector<int> InfluenceMaximizer::run(vector<pair<pair<int, int>, double> > &es,
 
 		infs[t].init(nscc, es2, comp);
 	}
-  cout << "init time: " << init_timer.stop() << endl;
+	cout << "first time: " << t_first.get_total() << endl;
+  	cout << "init time: " << init_timer.stop() << endl;
   
-  timer seed_timer;
+  	timer seed_timer;
 	vector<long long> gain(n);
 	vector<int> S;
 

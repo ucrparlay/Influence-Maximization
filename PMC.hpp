@@ -21,8 +21,8 @@ class DirectedInfluenceMaximizer {
 
  public:
   DirectedInfluenceMaximizer() = delete;
-  DirectedInfluenceMaximizer(const Graph& graph, size_t R)
-      : R(R), G(graph) {
+  DirectedInfluenceMaximizer(const Graph& graph, size_t _R)
+      : R(_R), G(graph) {
     n = G.n;
     m = G.m;
   }
@@ -31,58 +31,101 @@ class DirectedInfluenceMaximizer {
     parallel_for(0, R, [&](size_t r) {
       sketches[r].init_simple(G, r);
     });
-    // for (size_t r = 0; r<R; r++){
-    //   sketches[r].init_simple(G,r);
-    // }
   }
-  sequence<pair<NodeId, float>> select_seeds(int k, bool CELF);
+
+  void init_sketches_phases(){
+    sketches = sequence<PrunedEstimater>(R);
+    timer t;
+    t.start();
+    parallel_for(0, R, [&](size_t r){
+      sketches[r].scc(G, r);
+    });
+    cout << "scc: " << t.stop() << endl;
+    t.start();
+    sequence<sequence<edge>> edge_list(R);
+    parallel_for(0, R, [&](size_t r){
+      edge_list[r] = sketches[r].pack_edgelist(G);
+    });
+    cout << "pack edges: " << t.stop() << endl;
+    t.start();
+    parallel_for(0, R, [&](size_t r){
+      size_t n = (sketches[r].DAG).n;
+      sketches[r].DAG = EdgeListToGraph(edge_list[r], n);
+    });
+    cout << "EdgeListToGraph: " << t.stop() << endl;
+    t.start();
+    parallel_for(0, R, [&](size_t r){
+      make_directed(sketches[r].DAG);
+    });
+    cout << "make directed: " << t.stop() << endl;
+    t.start();
+    parallel_for(0, R, [&](size_t r){
+      sketches[r].compute_weight();
+    });
+    cout << "compute weight: " << t.stop() << endl;
+    t.start();
+    parallel_for(0, R, [&](size_t r){
+      size_t n = (sketches[r].DAG).n;
+      sketches[r].removed = sequence<bool>(n);
+      sketches[r].visited = sequence<bool>(n);
+      sketches[r].update = sequence<NodeId>(n);
+      parallel_for(0, n, [&](size_t i){
+        (sketches[r].removed)[i] = false;
+        (sketches[r].visited)[i] = false;
+      });
+    });
+    cout << "initial sequences: " << t.stop() << endl;
+    t.start();
+    parallel_for(0, R, [&](size_t r){
+      sketches[r].first();
+    });
+    cout << "first: " << t.stop() << endl;
+  }
+  sequence<pair<NodeId, float>> select_seeds(int k);
 };
 
-sequence<pair<NodeId, float>> DirectedInfluenceMaximizer::select_seeds(int k, bool CELF){
+sequence<pair<NodeId, float>> DirectedInfluenceMaximizer::select_seeds(int k){
   sequence<pair<NodeId,float>> seeds(k);
   if (k ==0) return seeds;
   sequence<NodeId> sum(n);
+  timer add_timer;
+  timer update_timer;
   //------------first round-----------
+  update_timer.start();
   parallel_for(0, n, [&](size_t i){
     sum[i]=0;
     for(size_t r = 0; r<R; r++){
       sum[i]+= sketches[r].sigma(i);
     }
   });
+  update_timer.stop();
   auto max_influence_it = parlay::max_element(sum);
   NodeId seed = max_influence_it - sum.begin();
   float influence_gain = sum[seed]/(R+0.0);
   seeds[0]=make_pair(seed, influence_gain);
+  add_timer.start();
   parallel_for(0, R, [&](size_t r){
     sketches[r].add(seed);
   });
+  add_timer.stop();
   //-----------end of first round ---------
   for (int t = 1; t<k; t++){
-    size_t max_sum = 0;
-    parallel_for(0, n, [&](size_t i){
-      size_t new_sum = 0;
-      if ((!CELF) || sum[i] >= max_sum){
-        for (size_t r = 0; r<R; r++){
-          new_sum += sketches[r].sigma(i); 
-        }
-        sum[i] = new_sum;
-      }
-      if (CELF && (new_sum > max_sum)){
-        write_max(&max_sum, new_sum, [](size_t a, size_t b){return a<b;});
-      }
-    },1024);
-    if (CELF){
-      max_influence_it = parlay::find(make_slice(sum), max_sum);
-    }else{
-      max_influence_it = parlay::max_element(sum);
-    }
+    update_timer.start();
+    parallel_for(0, R, [&](size_t r){
+      sketches[r].update_sum(sum);
+    });
+    update_timer.stop();
+    max_influence_it = parlay::max_element(sum);
     seed = max_influence_it - sum.begin();
-    influence_gain = max_sum/(R+0.0);
+    influence_gain = sum[seed]/(R+0.0);
     seeds[t]=make_pair(seed, influence_gain);
+    add_timer.start();
     parallel_for(0, R, [&](size_t r){
       sketches[r].add(seed);
     });
-
+    add_timer.stop();
   }
+  cout << "update time: " << update_timer.get_total() << endl;
+  cout << "add time: " << add_timer.get_total() << endl;
   return seeds;
 }
