@@ -32,57 +32,62 @@ class DirectedInfluenceMaximizer {
       sketches[r].init_simple(G, r);
     });
   }
-
-  void init_sketches_phases(){
-    sketches = sequence<PrunedEstimater>(R);
-    timer t;
-    t.start();
-    parallel_for(0, R, [&](size_t r){
-      sketches[r].scc(G, r);
-    });
-    cout << "scc: " << t.stop() << endl;
-    t.start();
-    sequence<sequence<edge>> edge_list(R);
-    parallel_for(0, R, [&](size_t r){
-      edge_list[r] = sketches[r].pack_edgelist(G);
-    });
-    cout << "pack edges: " << t.stop() << endl;
-    t.start();
-    parallel_for(0, R, [&](size_t r){
-      size_t n = (sketches[r].DAG).n;
-      sketches[r].DAG = EdgeListToGraph(edge_list[r], n);
-    });
-    cout << "EdgeListToGraph: " << t.stop() << endl;
-    t.start();
-    parallel_for(0, R, [&](size_t r){
-      make_directed(sketches[r].DAG);
-    });
-    cout << "make directed: " << t.stop() << endl;
-    t.start();
-    parallel_for(0, R, [&](size_t r){
-      sketches[r].compute_weight();
-    });
-    cout << "compute weight: " << t.stop() << endl;
-    t.start();
-    parallel_for(0, R, [&](size_t r){
-      size_t n = (sketches[r].DAG).n;
-      sketches[r].removed = sequence<bool>(n);
-      sketches[r].visited = sequence<bool>(n);
-      sketches[r].update = sequence<NodeId>(n);
-      parallel_for(0, n, [&](size_t i){
-        (sketches[r].removed)[i] = false;
-        (sketches[r].visited)[i] = false;
-      });
-    });
-    cout << "initial sequences: " << t.stop() << endl;
-    t.start();
-    parallel_for(0, R, [&](size_t r){
-      sketches[r].first();
-    });
-    cout << "first: " << t.stop() << endl;
-  }
+  void init_sketches_phases();
   sequence<pair<NodeId, float>> select_seeds(int k);
+  
 };
+
+void DirectedInfluenceMaximizer::init_sketches_phases(){
+  sketches = sequence<PrunedEstimater>(R);
+  timer t;
+  t.start();
+  parallel_for(0, R, [&](size_t r){
+    sketches[r].scc(G, r);
+  });
+  cout << "scc: " << t.stop() << endl;
+  t.start();
+  sequence<sequence<edge>> edge_list(R);
+  parallel_for(0, R, [&](size_t r){
+    edge_list[r] = sketches[r].pack_edgelist(G);
+  });
+  cout << "pack edges: " << t.stop() << endl;
+  t.start();
+  parallel_for(0, R, [&](size_t r){
+    size_t n = (sketches[r].DAG).n;
+    sketches[r].DAG = EdgeListToGraph(edge_list[r], n);
+  });
+  cout << "EdgeListToGraph: " << t.stop() << endl;
+  t.start();
+  parallel_for(0, R, [&](size_t r){
+    make_directed(sketches[r].DAG);
+  });
+  cout << "make directed: " << t.stop() << endl;
+  t.start();
+  parallel_for(0, R, [&](size_t r){
+    sketches[r].compute_weight();
+  });
+  cout << "compute weight: " << t.stop() << endl;
+  t.start();
+  parallel_for(0, R, [&](size_t r){
+    size_t n = (sketches[r].DAG).n;
+    sketches[r].removed = sequence<bool>(n);
+    sketches[r].visited = sequence<unsigned int>(n);
+    sketches[r].Q = sequence<NodeId>(n);
+    sketches[r].time_stamp = 0;
+    sketches[r].update = sequence<NodeId>(n);
+    parallel_for(0, n, [&](size_t i){
+      (sketches[r].removed)[i] = false;
+      (sketches[r].visited)[i] = 0;
+    });
+  });
+  cout << "initial sequences: " << t.stop() << endl;
+  t.start();
+  parallel_for(0, R, [&](size_t r){
+    sketches[r].first();
+  });
+  cout << "first: " << t.stop() << endl;
+}
+  
 
 sequence<pair<NodeId, float>> DirectedInfluenceMaximizer::select_seeds(int k){
   sequence<pair<NodeId,float>> seeds(k);
@@ -95,7 +100,7 @@ sequence<pair<NodeId, float>> DirectedInfluenceMaximizer::select_seeds(int k){
   parallel_for(0, n, [&](size_t i){
     sum[i]=0;
     for(size_t r = 0; r<R; r++){
-      sum[i]+= sketches[r].sigma(i);
+      sum[i]+= sketches[r].get_sigma(i);
     }
   });
   update_timer.stop();
@@ -125,7 +130,9 @@ sequence<pair<NodeId, float>> DirectedInfluenceMaximizer::select_seeds(int k){
     });
     add_timer.stop();
   }
+  #if defined (BREAKDOWN)
   cout << "update time: " << update_timer.get_total() << endl;
   cout << "add time: " << add_timer.get_total() << endl;
+  #endif
   return seeds;
 }
