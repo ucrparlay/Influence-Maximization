@@ -78,8 +78,8 @@ void PrunedEstimater::scc(const Graph& graph, size_t graph_id){
     hash_edge.graph_id = (NodeId)graph_id;
     hash_edge.n = graph.n;
     hash_edge.forward = true;
-    TARJAN_SCC SCC_P(graph);
-    SCC_P.tarjan(hash_edge);
+    TARJAN_SCC SCC_P(graph, hash_edge);
+    SCC_P.tarjan();
     comp = sequence<NodeId>(N);
     parallel_for (0, N, [&](size_t i){comp[i] = SCC_P.scc[i]-1;});
     DAG.n = SCC_P.cnt;

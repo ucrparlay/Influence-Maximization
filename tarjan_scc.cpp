@@ -51,14 +51,14 @@ int main(int argc, char** argv) {
   int repeat = P.getOptionInt("-t", (int)10);
   NodeId graph_id = P.getOptionInt("-i", 0);
   timer t;
-  TARJAN_SCC SCC_P(graph);
   Hash_Edge hash_edge{graph_id, (NodeId)graph.n, true};
-  SCC_P.tarjan(hash_edge);
+  TARJAN_SCC SCC_P(graph, hash_edge);
+  SCC_P.tarjan();
   double scc_cost;
-  for (int i = 0; i <= repeat; i++) {
+  for (int i = 0; i < repeat; i++) {
     SCC_P.clear();
     t.start();
-    SCC_P.tarjan(hash_edge);
+    SCC_P.tarjan();
     scc_cost = t.stop();
     if (i) {
       cout << scc_cost << endl;
