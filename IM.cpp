@@ -49,11 +49,11 @@ int main(int argc, char* argv[]){
       timer t_select; t_select.start();
       auto seeds_spread = pmc_solver.select_seeds(k);
       cout << "select time: " << t_select.stop()  << endl;
-      for (auto x: seeds_spread) {
-        // cout << x.first << " " << x.second << endl;
-        cout << x.first << " ";
-      }
-      cout << endl;
+      // for (auto x: seeds_spread) {
+      //   // cout << x.first << " " << x.second << endl;
+      //   cout << x.first << " ";
+      // }
+      // cout << endl;
     }
     
     if (P.getOption("-union_find")){

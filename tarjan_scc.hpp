@@ -16,9 +16,10 @@ using namespace std;
 class TARJAN_SCC {
  private:
   const Graph& G;
-  stack<NodeId> sk;
+  sequence<NodeId> sk;
   sequence<NodeId> low, dfn;
   size_t n, idx;
+  int sk_head;
   void dfs(NodeId u, Hash_Edge & hash_edge);
 
  public:
@@ -31,15 +32,17 @@ class TARJAN_SCC {
     low = sequence<NodeId>(G.n);
     dfn = sequence<NodeId>(G.n);
     scc = sequence<NodeId>(G.n);
+    sk = sequence<NodeId>(G.n);
     n = G.n;
     cnt = 0;
     idx = 0;
+    sk_head = 0;
   }
 };
 
 void TARJAN_SCC::dfs(NodeId u, Hash_Edge& hash_edge) {
   low[u] = dfn[u] = ++idx;
-  sk.push(u);
+  sk[sk_head++] = u;
   for (size_t i = G.offset[u]; i < G.offset[u + 1]; i++) {
     NodeId v = G.E[i];
     float w = G.W[i];
@@ -54,8 +57,10 @@ void TARJAN_SCC::dfs(NodeId u, Hash_Edge& hash_edge) {
   if (low[u] == dfn[u]) {
     cnt++;
     while (1) {
-      NodeId x = sk.top();
-      sk.pop();
+      if (sk.empty()){
+        cout << "pop from empty stack" << endl;
+      }
+      NodeId x = sk[--sk_head];
       scc[x] = cnt;
       if (x == u) break;
     }
@@ -69,7 +74,7 @@ void TARJAN_SCC::clear() {
   }
   idx = 0;
   cnt = 0;
-  sk = stack<NodeId>();
+  sk_head = 0;
 }
 
 void TARJAN_SCC::tarjan(Hash_Edge & hash_edge) {

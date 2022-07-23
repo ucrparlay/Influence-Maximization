@@ -39,6 +39,7 @@ class DirectedInfluenceMaximizer {
 
 void DirectedInfluenceMaximizer::init_sketches_phases(){
   sketches = sequence<PrunedEstimater>(R);
+  cout << "init_sketches_phases " << endl;
   timer t;
   t.start();
   parallel_for(0, R, [&](size_t r){
