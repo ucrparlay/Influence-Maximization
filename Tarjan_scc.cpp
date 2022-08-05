@@ -18,22 +18,23 @@ int main(int argc, char** argv) {
   }
   char* fileName = argv[1];
   Graph graph = read_graph(fileName);
+  cout << fileName << " n " << graph.n << " m " << graph.m << endl;
 
-//   float w = P.getOptionDouble("-w", 0.0);
-//   if (w == 0.0){
-//     cout << "WIC" << endl;
-//     AssignIndegreeWeight(graph);
-//   }else{  
-//     cout << "UIC" << endl;
-//     AssignUniWeight(graph,w);
-//   }
+  float w = P.getOptionDouble("-w", 0.0);
+  if (w == 0.0){
+    cout << "WIC" << endl;
+    AssignIndegreeWeight(graph);
+  }else{  
+    cout << "UIC" << endl;
+    AssignUniWeight(graph,w);
+  }
 
   int repeat = P.getOptionInt("-t", (int)3);
-//   NodeId graph_id = P.getOptionInt("-i", 0);
+  NodeId graph_id = P.getOptionInt("-i", 0);
   timer t;
-//   Hash_Edge hash_edge{graph_id, (NodeId)graph.n, true};
+  Hash_Edge hash_edge{graph_id, (NodeId)graph.n, true};
   sequence<NodeId> label(graph.n);
-  Tarjan_SCC SCC_P(graph);
+  Tarjan_SCC SCC_P(graph, hash_edge);
   SCC_P.scc(label);
   double scc_cost;
   size_t n_scc;

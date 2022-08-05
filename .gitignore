@@ -1,3 +1,4 @@
+Makefile
 graph
 IM
 connect
@@ -7,6 +8,7 @@ bfs
 ldd
 union_find
 tarjan_scc
+Tarjan_scc
 log
 sample_graph.sh
 data/*
@@ -15,3 +17,4 @@ seeds_*
 *.sh
 */__pycache__
 scripts/*.txt
+*.sh

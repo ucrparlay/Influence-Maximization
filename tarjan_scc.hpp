@@ -26,7 +26,7 @@ class TARJAN_SCC {
  public:
   size_t cnt;
   sequence<NodeId> scc;
-  void tarjan();
+  size_t tarjan();
   void clear();
   TARJAN_SCC() = delete;
   TARJAN_SCC(const Graph& graph, const Hash_Edge& _hash_edge) : \
@@ -79,8 +79,9 @@ void TARJAN_SCC::clear() {
   sk_head = 0;
 }
 
-void TARJAN_SCC::tarjan() {
+size_t TARJAN_SCC::tarjan() {
   for (size_t i = 0; i < n; i++) {
     if (!dfn[i]) dfs(i);
   }
+  return cnt;
 }

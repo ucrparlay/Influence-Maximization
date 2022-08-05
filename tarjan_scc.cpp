@@ -48,23 +48,23 @@ int main(int argc, char** argv) {
     AssignUniWeight(graph,w);
   }
 
-  int repeat = P.getOptionInt("-t", (int)10);
+  int repeat = P.getOptionInt("-t", (int)3);
   NodeId graph_id = P.getOptionInt("-i", 0);
   timer t;
   Hash_Edge hash_edge{graph_id, (NodeId)graph.n, true};
   TARJAN_SCC SCC_P(graph, hash_edge);
   SCC_P.tarjan();
   double scc_cost;
+  size_t n_scc;
   for (int i = 0; i < repeat; i++) {
     SCC_P.clear();
     t.start();
-    SCC_P.tarjan();
+    n_scc = SCC_P.tarjan();
     scc_cost = t.stop();
-    if (i) {
-      cout << scc_cost << endl;
-    }
+    cout << "scc cost " << scc_cost << endl;
   }
   cout << "average cost " << t.get_total()/repeat << endl;
+  cout << "n_scc " << n_scc << endl;
   if (P.getOption("-status")){
     SCC_status(SCC_P.scc, graph.n);
     unordered_set<pair<NodeId,NodeId>, hashFunction> edge_set;

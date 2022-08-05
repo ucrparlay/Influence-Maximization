@@ -16,6 +16,7 @@ using namespace std;
 class Tarjan_SCC{
   private:
     const Graph& G;
+    const Hash_Edge& hash_edge;
     sequence<NodeId> stack;
     sequence<NodeId> call_stack;
     sequence<NodeId> low;
@@ -27,7 +28,8 @@ class Tarjan_SCC{
   public:
     size_t scc(sequence<NodeId>& label);
     Tarjan_SCC()=delete;
-    Tarjan_SCC(const Graph& graph):G(graph){
+    Tarjan_SCC(const Graph& graph, const Hash_Edge& _hash_edge)
+                :G(graph), hash_edge(_hash_edge){
         low = sequence<NodeId>(G.n);
         dfn = sequence<NodeId>(G.n);
         stack = sequence<NodeId>(G.n);
@@ -53,12 +55,14 @@ void Tarjan_SCC::dfs(NodeId _u, sequence<NodeId>& label){
         bool breakdown = false;
         for (; begin_offset<G.offset[u+1];begin_offset++){
             NodeId v = G.E[begin_offset];
+            float w = G.W[begin_offset];
+            if (!hash_edge(u,v,w)) continue;
             if (dfn[v]==0){
                 call_stack[call_head++] = v;
                 edge_offset[u]=begin_offset;
                 breakdown = true;
                 break;
-            }else if (label[v]==0){
+            }else if (label[v]==UINT_N_MAX){
                 low[u]=min(low[u],dfn[v]);
             }
         }
@@ -66,12 +70,12 @@ void Tarjan_SCC::dfs(NodeId _u, sequence<NodeId>& label){
             continue;
         }
         if (low[u]==dfn[u]){
-            cnt++;
             while(1){
                 NodeId x = stack[--stack_head];
                 label[x]=cnt;
                 if (x==u) break;
             }
+            cnt++;
         }
         call_head--;
     }
@@ -79,7 +83,7 @@ void Tarjan_SCC::dfs(NodeId _u, sequence<NodeId>& label){
 
 size_t Tarjan_SCC::scc(sequence<NodeId>& label){
     parallel_for(0,G.n,[&](size_t i){
-        label[i]=0;
+        label[i]=UINT_N_MAX;
         dfn[i]=0;
     });
     idx = cnt = 0;
