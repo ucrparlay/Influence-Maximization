@@ -359,10 +359,17 @@ void PrunedEstimater::update_sum(sequence<NodeId>& sum){
     for (size_t i = 0; i<n_update; i++){
         NodeId u = update[i];
         NodeId old_value = sigmas[u];
+        for (size_t j = weight_offset[u]; j<weight_offset[u+1]; j++){
+            NodeId v = dcomp[j];
+            fetch_and_minus(&(sum[v]), old_value);   
+        }
+    }
+    for (size_t i = 0; i<n_update; i++){
+        NodeId u = update[i];
         NodeId new_value = sigma(u);
         for (size_t j = weight_offset[u]; j<weight_offset[u+1]; j++){
             NodeId v = dcomp[j];
-            fetch_and_minus(&(sum[v]), old_value - new_value);   
+            fetch_and_add(&(sum[v]), new_value);   
         }
     }
 }

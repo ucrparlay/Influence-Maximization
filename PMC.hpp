@@ -101,6 +101,9 @@ sequence<pair<NodeId, float>> DirectedInfluenceMaximizer::select_seeds(int k){
   parallel_for(0, n, [&](size_t i){
     sum[i]=0;
     for(size_t r = 0; r<R; r++){
+      if ((UINT_N_MAX - sum[i]) < sketches[r].get_sigma(i)){
+        cout << "sum overflow!!!!!!!" << endl;
+      }
       sum[i]+= sketches[r].get_sigma(i);
     }
   });
