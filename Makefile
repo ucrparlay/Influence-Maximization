@@ -67,7 +67,8 @@ scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp
 	$(CC) $(CPPFLAGS) scc.cpp -o scc
 tarjan_scc: tarjan_scc.hpp tarjan_scc.cpp $(COMMON)
 	$(CC) $(CPPFLAGS) tarjan_scc.cpp -o tarjan_scc
-
+Tarjan_scc: Tarjan_scc.hpp Tarjan_scc.cpp $(COMMON)
+	$(CC) $(CPPFLAGS) Tarjan_scc.cpp -o Tarjan_scc
 reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
 	$(CC) $(CPPFLAGS) reach.cpp -o reach
 

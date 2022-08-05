@@ -59,7 +59,7 @@ void TARJAN_SCC::dfs(NodeId u) {
   if (low[u] == dfn[u]) {
     cnt++;
     while (1) {
-      if (sk.empty()){
+      if (sk_head == 0){
         cout << "pop from empty stack" << endl;
       }
       NodeId x = sk[--sk_head];
