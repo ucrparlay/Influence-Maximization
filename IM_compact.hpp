@@ -55,7 +55,7 @@ tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
   unordered_set<NodeId> visit;
   visit.insert(x);
   const auto& hash_edge = hash_edges[graph_id];
-  for (unsigned int i = 0; i < que.size(); i++) {
+  for (size_t i = 0; i < que.size(); i++) {
     if (center.has_value()) break;
     auto u = que[i];
     for (auto j = G.offset[u]; j < G.offset[u + 1]; j++) {
@@ -80,7 +80,7 @@ tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
 void CompactInfluenceMaximizer::init_sketches() {
   timer tt;
 
-  parallel_for(0, n, [&](int i) {
+  parallel_for(0, n, [&](size_t i) {
     Hash_Edge hash_edge;  // use hash_edge as random generator
     hash_edge.graph_id = i + R;
     hash_edge.n = G.n;
@@ -105,6 +105,7 @@ void CompactInfluenceMaximizer::init_sketches() {
   });
   sequence<NodeId> belong(n);
   for (size_t r = 0; r < R; r++) {
+    cout << "r = " << r << endl;
     parallel_for(0, n, [&](size_t u) {
       auto u_center = std::get<0>(get_center(r, u));
       if (u_center.has_value()) {
@@ -147,6 +148,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   sequence<pair<NodeId, float>> seeds(k);
   sequence<size_t> influence(n);
   for (int round = 0; round < k; round++) {
+    cout << "round: " << round << endl;
     size_t max_influence = 0;
     parallel_for(0, n, [&](size_t i) {
       size_t new_influence = 0;

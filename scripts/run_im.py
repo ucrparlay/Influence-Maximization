@@ -50,6 +50,7 @@ def run_im_compact_all():
 
 if __name__ == '__main__':
     # run_im('/data/lwang323/graph/bin/HepPh_sym.bin', 0.1)
-    # run_im_compact('/data/lwang323/graph/bin/HepPh_sym.bin', 0.1, 1.0)
-    run_im_all()
-    run_im_compact_all()
+    for compact in [0.05, 0.1, 0.2]:
+        run_im_compact('/data/graphs/bin/clueweb_sym.bin', 0.1, compact)
+    # run_im_all()
+    # run_im_compact_all()
