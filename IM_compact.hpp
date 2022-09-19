@@ -7,6 +7,7 @@
 #include "graph.hpp"
 #include "parlay/sequence.h"
 #include "union_find.hpp"
+#include "WinnerTree.hpp"
 using namespace std;
 using namespace parlay;
 
@@ -21,7 +22,8 @@ class CompactInfluenceMaximizer {
   sequence<sequence<size_t>> sketches;
 
   tuple<optional<NodeId>, bool, size_t> get_center(size_t graph_id, NodeId x);
-
+  size_t compute(NodeId i);
+  size_t compute_pal(NodeId i);
  public:
   CompactInfluenceMaximizer() = delete;
   CompactInfluenceMaximizer(Graph& graph, float compact_rate, size_t R)
@@ -143,42 +145,79 @@ void CompactInfluenceMaximizer::init_sketches() {
   cout << "init_sketches time: " << tt.stop() << endl;
 }
 
+size_t CompactInfluenceMaximizer::compute(NodeId i){
+  size_t new_influence = 0;
+  for (size_t r = 0; r < R; r++) {
+    auto [center, meet_seed, num] = get_center(r, i);
+    if (center.has_value()) {
+      auto c = center_id[center.value()];
+      auto p = sketches[r][c];
+      if (!(p & TOP_BIT)) {
+        p = sketches[r][p];
+      }
+      new_influence += p & VAL_MASK;
+    } else {
+      if (!meet_seed) {
+        new_influence += num;
+      }
+    }
+  }
+  return new_influence;
+}
+
+size_t CompactInfluenceMaximizer::compute_pal(NodeId i){
+  sequence<size_t> new_influences(R);
+  parallel_for(0, R, [&](int r){
+    auto [center, meet_seed, num] = get_center(r, i);
+    if (center.has_value()) {
+      auto c = center_id[center.value()];
+      auto p = sketches[r][c];
+      if (!(p & TOP_BIT)) {
+        p = sketches[r][p];
+      }
+      new_influences[r] = p & VAL_MASK;
+    } else {
+      if (!meet_seed) {
+        new_influences[r] = num;
+      }
+    }
+  });
+  return reduce(new_influences);
+}
+
 sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   timer tt;
   sequence<pair<NodeId, float>> seeds(k);
   sequence<size_t> influence(n);
+  sequence<int> time_stamp(n); // 
+  sequence<pair<size_t, NodeId>> heap(n);
+  NodeId seed;
+  // first round
   for (int round = 0; round < k; round++) {
     cout << "round: " << round << endl;
-    size_t max_influence = 0;
-    parallel_for(0, n, [&](size_t i) {
-      size_t new_influence = 0;
-      if (round == 0 || influence[i] >= max_influence) {
-        for (size_t r = 0; r < R; r++) {
-          auto [center, meet_seed, num] = get_center(r, i);
-          if (center.has_value()) {
-            auto c = center_id[center.value()];
-            auto p = sketches[r][c];
-            if (!(p & TOP_BIT)) {
-              p = sketches[r][p];
-            }
-            new_influence += p & VAL_MASK;
-          } else {
-            if (!meet_seed) {
-              new_influence += num;
-            }
-          }
-        }
-        influence[i] = new_influence;
+    if (round == 0){
+      parallel_for(0, n, [&](size_t i){
+        influence[i]= compute(i);
+        time_stamp[i]= round;
+      });
+      build_up(influence, heap, (NodeId)0, (NodeId)n);
+      seed = parlay::max_element(influence) - influence.begin();
+    }else{
+      NodeId m = n>>1;
+      NodeId root_node = heap[m].second;
+      while (time_stamp[root_node] != round){
+        size_t new_influence = compute_pal(root_node);
+        influence[root_node] = new_influence;
+        time_stamp[root_node]=round;
+        update(influence, heap, (NodeId)0, (NodeId)n);
+        root_node = heap[m].second;
       }
-      if (new_influence > max_influence) {
-        write_max(&max_influence, new_influence,
-                  [](size_t a, size_t b) { return a < b; });
-      }
-    });
-    size_t seed = parlay::max_element(influence) - influence.begin();
-    float influence_gain = max_influence / (R + 0.0);
+      seed = root_node;
+    }
+    float influence_gain = influence[seed] / (R + 0.0);
     seeds[round] = {seed, influence_gain};
     influence[seed] = 0;
+    update(influence, heap, (NodeId)0, (NodeId)n);
     is_seed[seed] = true;
     parallel_for(0, R, [&](size_t r) {
       auto center = std::get<0>(get_center(r, seed));
