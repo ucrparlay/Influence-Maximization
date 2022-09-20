@@ -102,48 +102,86 @@ void CompactInfluenceMaximizer::init_sketches() {
   auto unite =
       gbbs::unite_variants::UniteRemCAS<decltype(splice), decltype(find),
                                         find_atomic_halve>(find, splice);
-  sequence<sequence<NodeId>> labels(R, sequence<NodeId>(center_cnt));
-  parallel_for(0, R, [&](size_t r) {
-    parallel_for(0, center_cnt, [&](size_t i) { labels[r][i] = i; });
-  });
-  sequence<NodeId> belong(n);
+  sequence<NodeId> label(n);
+  sequence<pair<NodeId, NodeId>> belong(n);
+  timer t_union_find;
+  timer t_sketch;
+  timer t_sort;
   for (size_t r = 0; r < R; r++) {
-    cout << "r = " << r << endl;
-    parallel_for(0, n, [&](size_t u) {
-      auto u_center = std::get<0>(get_center(r, u));
-      if (u_center.has_value()) {
-        belong[u] = center_id[u_center.value()];
-      } else {
-        belong[u] = center_cnt;  // center not found
-      }
+    // cout << "r = " << r << endl;
+    t_union_find.start();
+    parallel_for(0, n, [&](size_t i){
+      label[i]=i;
     });
     parallel_for(0, n, [&](size_t u) {
       parallel_for(G.offset[u], G.offset[u + 1], [&](size_t j) {
         auto v = G.E[j];
         if (u < v && hash_edges[r](u, v, G.W[j])) {
-          if (belong[u] < center_cnt && belong[v] < center_cnt &&
-              belong[u] != belong[v]) {
-            unite(belong[u], belong[v], labels[r]);
-          }
+          unite(u,v,label);
         }
       });
     });
-    parallel_for(0, center_cnt,
-                 [&](size_t i) { sketches[r][i] = find(i, labels[r]); });
-    parallel_for(0, n, [&](size_t i) {
-      if (belong[i] < center_cnt) {
-        belong[i] = sketches[r][belong[i]];
+    parallel_for(0, n, [&](size_t i){
+      auto l =find(i,label);
+      belong[i]=make_pair(l,i);
+    });
+    t_union_find.stop();
+    t_sort.start();
+    // sort_inplace(belong);
+    integer_sort_inplace(belong, [&](pair<NodeId,NodeId> a){return a.first;});
+    // auto group = group_by_key(belong);
+    t_sort.stop();
+    t_sketch.start();
+    // parallel_for(0, group.size(), [&](size_t i){
+    //   auto key = group[i];
+    //   NodeId center;
+    //   bool meet_center = false;
+    //   NodeId cc_cnt=0;
+    //   for (auto j : key.second){
+    //     if (is_center[j]){
+    //       if (!meet_center){
+    //         meet_center = true;
+    //         center = center_id[j];
+    //       }else{
+    //         sketches[r][center_id[j]] = center;
+    //       }
+    //     }
+    //     cc_cnt++;
+    //   }
+    //   if (meet_center){
+    //     sketches[r][center] = TOP_BIT | cc_cnt;
+    //   }
+    // });
+    parallel_for(0, n, [&](size_t i){
+      if (i == 0 || belong[i].first != belong[i-1].first){
+        NodeId center;
+        bool meet_center = false;
+        NodeId cc_cnt=0;
+        for (auto j = i; j<n; j++){
+          if (j>0 && belong[j].first!= belong[j-1].first){
+            break;
+          }
+          if (is_center[j]){
+            if (!meet_center){
+              meet_center = true;
+              center = center_id[j];
+            }else{
+              sketches[r][center_id[j]] = center;
+            }
+          }
+          cc_cnt++;
+        }
+        if (meet_center){
+          sketches[r][center] = TOP_BIT | cc_cnt;
+        }
       }
     });
-    auto hist = histogram_by_index(belong, center_cnt + 1);
-    parallel_for(0, center_cnt, [&](size_t i) {
-      if (hist[i] != 0) {
-        sketches[r][i] = TOP_BIT | (size_t)hist[i];
-      }
-    });
+    t_sketch.stop();
   }
-
   cout << "init_sketches time: " << tt.stop() << endl;
+  cout << "union time time: " << t_union_find.get_total() << endl;
+  cout << "sort time: " << t_sort.get_total() << endl;
+  cout << "sketch time: " << t_sketch.get_total() << endl;
 }
 
 size_t CompactInfluenceMaximizer::compute(NodeId i){
@@ -206,6 +244,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
       seed = parlay::max_element(influence) - influence.begin();
       cout << seed <<" " << n << " " <<tt.stop() << endl;
     }else if (round < thresh){
+      tt.start();
       size_t max_influence = 0;
       parallel_for(0,n,[&](size_t i){
         if (influence[i]>max_influence){
@@ -219,6 +258,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
         }
       });
       seed = parlay::max_element(influence) - influence.begin();
+      cout << seed << " write_max " << tt.stop() << endl;
     }else{
       tt.start();
       if (round == thresh){

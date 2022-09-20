@@ -33,7 +33,7 @@ int main(int argc, char* argv[]){
       timer tt;
       CompactInfluenceMaximizer compact_IM_solver(graph, compact, R);
       compact_IM_solver.init_sketches();
-      auto seeds = compact_IM_solver.select_seeds(200);
+      auto seeds = compact_IM_solver.select_seeds(k);
       cout << "total time: " << tt.stop() << endl;
       cout << "seeds: ";
       for (auto t: seeds) cout << t.first << ' ';
