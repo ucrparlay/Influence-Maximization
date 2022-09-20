@@ -19,6 +19,7 @@ int main(int argc, char* argv[]){
     int option = P.getOptionInt("-option", 2);
     bool CELF = P.getOption("-celf");
     float compact = P.getOptionDouble("-compact", 0.0);
+    thresh = P.getOptionInt("-thresh", 5);
     Graph graph = read_graph(file);
     if (w == 0.0){
         cout << "WIC" << endl;

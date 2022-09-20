@@ -11,6 +11,7 @@
 using namespace std;
 using namespace parlay;
 
+int thresh;
 class CompactInfluenceMaximizer {
  private:
   size_t n, m, R, center_cnt;
@@ -186,6 +187,7 @@ size_t CompactInfluenceMaximizer::compute_pal(NodeId i){
 }
 
 sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
+  cout << "threshold " << thresh << endl;
   timer tt;
   sequence<pair<NodeId, float>> seeds(k);
   sequence<size_t> influence(n);
@@ -203,8 +205,25 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
       build_up(influence, heap, (NodeId)0, (NodeId)n);
       seed = parlay::max_element(influence) - influence.begin();
       cout << seed <<" " << n << " " <<tt.stop() << endl;
+    }else if (round < thresh){
+      size_t max_influence = 0;
+      parallel_for(0,n,[&](size_t i){
+        if (influence[i]>max_influence){
+          auto new_influence = compute(i);
+          if (new_influence > max_influence){
+            write_max(&max_influence, new_influence, 
+              [](size_t a, size_t b){return a<b;});
+          }
+          influence[i]=new_influence;
+          time_stamp[i]=round;
+        }
+      });
+      seed = parlay::max_element(influence) - influence.begin();
     }else{
       tt.start();
+      if (round == thresh){
+        build_up(influence, heap, (NodeId)0, (NodeId)n);
+      }
       NodeId eval_cnt=0;
       NodeId m = n>>1;
       NodeId root_node = heap[m].second;
