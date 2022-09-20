@@ -194,15 +194,18 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   NodeId seed;
   // first round
   for (int round = 0; round < k; round++) {
-    cout << "round: " << round << endl;
     if (round == 0){
+      tt.start();
       parallel_for(0, n, [&](size_t i){
         influence[i]= compute(i);
         time_stamp[i]= round;
       });
       build_up(influence, heap, (NodeId)0, (NodeId)n);
       seed = parlay::max_element(influence) - influence.begin();
+      cout << seed <<" " << n << " " <<tt.stop() << endl;
     }else{
+      tt.start();
+      NodeId eval_cnt=0;
       NodeId m = n>>1;
       NodeId root_node = heap[m].second;
       while (time_stamp[root_node] != round){
@@ -211,8 +214,10 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
         time_stamp[root_node]=round;
         update(influence, heap, (NodeId)0, (NodeId)n);
         root_node = heap[m].second;
+        eval_cnt++;
       }
       seed = root_node;
+      cout << seed << " " << eval_cnt << " " << tt.stop() << endl;
     }
     float influence_gain = influence[seed] / (R + 0.0);
     seeds[round] = {seed, influence_gain};
