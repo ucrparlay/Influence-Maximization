@@ -21,6 +21,7 @@ class CompactInfluenceMaximizer {
   sequence<bool> is_center, is_seed;
   sequence<size_t> center_id;
   sequence<sequence<size_t>> sketches;
+  sequence<size_t> influence;
 
   tuple<optional<NodeId>, bool, size_t> get_center(size_t graph_id, NodeId x);
   size_t compute(NodeId i);
@@ -41,6 +42,7 @@ class CompactInfluenceMaximizer {
     is_center = sequence<bool>(n);
     is_seed = sequence<bool>(n);
     center_id = sequence<size_t>(n);
+    influence = sequence<size_t>(n);
   }
   void init_sketches();
   sequence<pair<NodeId, float>> select_seeds(int k);
@@ -92,6 +94,7 @@ void CompactInfluenceMaximizer::init_sketches() {
       is_center[i] = true;
       center_id[i] = 1;
     }
+    influence[i]=0;
   });
   center_cnt = parlay::scan_inplace(center_id);
   cout << "center_cnt: " << center_cnt << endl;
@@ -158,7 +161,7 @@ void CompactInfluenceMaximizer::init_sketches() {
         bool meet_center = false;
         NodeId cc_cnt=0;
         for (auto j = i; j<n; j++){
-          if (j>0 && belong[j].first!= belong[j-1].first){
+          if (j>i && belong[j].first!= belong[j-1].first){
             break;
           }
           if (is_center[j]){
@@ -228,7 +231,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   cout << "threshold " << thresh << endl;
   timer tt;
   sequence<pair<NodeId, float>> seeds(k);
-  sequence<size_t> influence(n);
   sequence<int> time_stamp(n); // 
   sequence<pair<size_t, NodeId>> heap(n);
   NodeId seed;
@@ -240,9 +242,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
         influence[i]= compute(i);
         time_stamp[i]= round;
       });
-      build_up(influence, heap, (NodeId)0, (NodeId)n);
+      // build_up(influence, heap, (NodeId)0, (NodeId)n);
       seed = parlay::max_element(influence) - influence.begin();
-      cout << seed <<" " << n << " " <<tt.stop() << endl;
+      cout << seed <<" " << 0 << " " <<tt.stop() << endl;
     }else if (round < thresh){
       tt.start();
       size_t max_influence = 0;
@@ -278,6 +280,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
       seed = root_node;
       cout << seed << " " << eval_cnt << " " << tt.stop() << endl;
     }
+    tt.start();
     float influence_gain = influence[seed] / (R + 0.0);
     seeds[round] = {seed, influence_gain};
     influence[seed] = 0;
@@ -295,7 +298,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
         }
       }
     });
+    tt.stop();
   }
-  cout << "select_seeds time: " << tt.stop() << endl;
+  cout << "select_seeds time: " << tt.get_total() << endl;
   return seeds;
 }
