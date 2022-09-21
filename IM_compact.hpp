@@ -177,6 +177,9 @@ void CompactInfluenceMaximizer::init_sketches() {
         if (meet_center){
           sketches[r][center] = TOP_BIT | cc_cnt;
         }
+        parallel_for(i, i+cc_cnt, [&](size_t j){
+          influence[j] += cc_cnt;
+        });
       }
     });
     t_sketch.stop();
@@ -239,7 +242,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     if (round == 0){
       tt.start();
       parallel_for(0, n, [&](size_t i){
-        influence[i]= compute(i);
+        // influence[i]= compute(i);
         time_stamp[i]= round;
       });
       // build_up(influence, heap, (NodeId)0, (NodeId)n);
