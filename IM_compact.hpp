@@ -212,25 +212,6 @@ size_t CompactInfluenceMaximizer::compute(NodeId i){
   return new_influence;
 }
 
-size_t CompactInfluenceMaximizer::compute_pal(NodeId i){
-  sequence<size_t> new_influences(R);
-  parallel_for(0, R, [&](int r){
-    auto [center, meet_seed, num] = get_center(r, i);
-    if (center.has_value()) {
-      auto c = center_id[center.value()];
-      auto p = sketches[r][c];
-      if (!(p & TOP_BIT)) {
-        p = sketches[r][p];
-      }
-      new_influences[r] = p & VAL_MASK;
-    } else {
-      if (!meet_seed) {
-        new_influences[r] = num;
-      }
-    }
-  });
-  return reduce(new_influences);
-}
 
 void CompactInfluenceMaximizer::update(
           sequence<NodeId>& tree, 
