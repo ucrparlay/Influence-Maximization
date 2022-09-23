@@ -7,14 +7,34 @@
 #include "graph.hpp"
 #include "parlay/sequence.h"
 #include "union_find.hpp"
-#include "WinnerTree.hpp"
+// #include "WinnerTree.hpp"
 using namespace std;
 using namespace parlay;
+
+// tree stores <influence, value's index(or saying the vertex id)>
+void build_up(sequence<size_t>& value, 
+            sequence<NodeId>& tree,
+            NodeId start, NodeId end){
+    if (start == end - 1){
+        return;
+    }
+    NodeId m = (start+end) >>1;
+    par_do(
+        [&](){build_up(value, tree, start, m);},
+        [&](){build_up(value, tree, m, end);});
+    NodeId l_idx = (start+m)>>1;
+    NodeId r_idx = (m+end)>>1;
+    // pair<size_t, NodeId> left, right;
+    auto left = (l_idx == start)? start: tree[l_idx];
+    auto right = (r_idx == m)? m: tree[r_idx];
+    tree[m]= value[left] >= value[right]? left: right;
+    return;
+}
 
 int thresh;
 class CompactInfluenceMaximizer {
  private:
-  size_t n, m, R, center_cnt;
+  size_t n, R, center_cnt, max_influence;
   Graph& G;
   float compact_rate;
   sequence<Hash_Edge> hash_edges;
@@ -22,17 +42,18 @@ class CompactInfluenceMaximizer {
   sequence<size_t> center_id;
   sequence<sequence<size_t>> sketches;
   sequence<size_t> influence;
+  sequence<int> time_stamp;
 
   tuple<optional<NodeId>, bool, size_t> get_center(size_t graph_id, NodeId x);
   size_t compute(NodeId i);
   size_t compute_pal(NodeId i);
+  void update(sequence<NodeId>& heap, int round, NodeId start, NodeId end);
  public:
   CompactInfluenceMaximizer() = delete;
   CompactInfluenceMaximizer(Graph& graph, float compact_rate, size_t R)
       : R(R), G(graph), compact_rate(compact_rate) {
     assert(G.symmetric);
     n = G.n;
-    m = G.m;
     hash_edges = sequence<Hash_Edge>(R);
     parallel_for(0, R, [&](size_t r) {
       hash_edges[r].graph_id = r;
@@ -43,6 +64,7 @@ class CompactInfluenceMaximizer {
     is_seed = sequence<bool>(n);
     center_id = sequence<size_t>(n);
     influence = sequence<size_t>(n);
+    time_stamp = sequence<int>(n);
   }
   void init_sketches();
   sequence<pair<NodeId, float>> select_seeds(int k);
@@ -132,29 +154,9 @@ void CompactInfluenceMaximizer::init_sketches() {
     t_sort.start();
     // sort_inplace(belong);
     integer_sort_inplace(belong, [&](pair<NodeId,NodeId> a){return a.first;});
-    // auto group = group_by_key(belong);
     t_sort.stop();
     t_sketch.start();
-    // parallel_for(0, group.size(), [&](size_t i){
-    //   auto key = group[i];
-    //   NodeId center;
-    //   bool meet_center = false;
-    //   NodeId cc_cnt=0;
-    //   for (auto j : key.second){
-    //     if (is_center[j]){
-    //       if (!meet_center){
-    //         meet_center = true;
-    //         center = center_id[j];
-    //       }else{
-    //         sketches[r][center_id[j]] = center;
-    //       }
-    //     }
-    //     cc_cnt++;
-    //   }
-    //   if (meet_center){
-    //     sketches[r][center] = TOP_BIT | cc_cnt;
-    //   }
-    // });
+
     parallel_for(0, n, [&](size_t i){
       if (i == 0 || belong[i].first != belong[i-1].first){
         NodeId center;
@@ -230,65 +232,91 @@ size_t CompactInfluenceMaximizer::compute_pal(NodeId i){
   return reduce(new_influences);
 }
 
+void CompactInfluenceMaximizer::update(
+          sequence<NodeId>& tree, 
+          int round, NodeId start, NodeId end){
+  if (start +1 == end){
+    if (influence[start] > max_influence){
+      if (time_stamp[start]!= round){
+        influence[start] = compute(start);
+        time_stamp[start] = round;
+        if (influence[start] > max_influence){
+          write_max(&max_influence, influence[start], 
+          [&](size_t a, size_t b){return a < b;});
+        }
+      }
+    }
+    return;
+  }
+  NodeId m = (start+end)>>1;
+  auto root = tree[m];
+  if (influence[root] <= max_influence){
+    if (time_stamp[root] != round){
+      return;
+    }
+  }
+  if (influence[root] > max_influence){
+    if (time_stamp[root] != round){
+      influence[root] = compute(root);
+      time_stamp[root] = round;
+      if (influence[root] > max_influence){
+      write_max(&max_influence, influence[root], 
+        [&](size_t a, size_t b){return a<b;});
+      }
+    }else{
+      cout << "not likely to happen" << endl;
+    }
+  }
+  NodeId l_idx = (start+m)>>1;
+  NodeId r_idx = (m+end)>>1;
+  auto left = (l_idx == start)? start: tree[l_idx];
+  auto right = (r_idx == m)? m: tree[r_idx];
+
+  par_do(
+        [&](){update(tree, round, start, m);},
+        [&](){update(tree, round, m, end);});
+  // pair<size_t, NodeId> left, right;
+  left = (l_idx == start)? start: tree[l_idx];
+  right = (r_idx == m)? m: tree[r_idx];
+  tree[m]= influence[left] >= influence[right]? left:right;
+  return;
+}
+
 sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
-  cout << "threshold " << thresh << endl;
   timer tt;
   sequence<pair<NodeId, float>> seeds(k);
-  sequence<int> time_stamp(n); // 
-  sequence<pair<size_t, NodeId>> heap(n);
+  sequence<NodeId> heap(n);
   NodeId seed;
   // first round
   for (int round = 0; round < k; round++) {
+    tt.start();
     if (round == 0){
-      tt.start();
       parallel_for(0, n, [&](size_t i){
-        // influence[i]= compute(i);
         time_stamp[i]= round;
       });
-      // build_up(influence, heap, (NodeId)0, (NodeId)n);
-      seed = parlay::max_element(influence) - influence.begin();
-      cout << seed <<" " << 0 << " " <<tt.stop() << endl;
-    }else if (round < thresh){
-      tt.start();
-      size_t max_influence = 0;
-      parallel_for(0,n,[&](size_t i){
-        if (influence[i]>max_influence){
-          auto new_influence = compute(i);
-          if (new_influence > max_influence){
-            write_max(&max_influence, new_influence, 
-              [](size_t a, size_t b){return a<b;});
-          }
-          influence[i]=new_influence;
-          time_stamp[i]=round;
-        }
-      });
-      seed = parlay::max_element(influence) - influence.begin();
-      cout << seed << " write_max " << tt.stop() << endl;
+      build_up(influence, heap, (NodeId)0, (NodeId)n);
     }else{
-      tt.start();
-      if (round == thresh){
-        build_up(influence, heap, (NodeId)0, (NodeId)n);
-      }
-      NodeId eval_cnt=0;
-      NodeId m = n>>1;
-      NodeId root_node = heap[m].second;
-      while (time_stamp[root_node] != round){
-        size_t new_influence = compute_pal(root_node);
-        influence[root_node] = new_influence;
-        time_stamp[root_node]=round;
-        update(influence, heap, (NodeId)0, (NodeId)n);
-        root_node = heap[m].second;
-        eval_cnt++;
-      }
-      seed = root_node;
-      cout << seed << " " << eval_cnt << " " << tt.stop() << endl;
+      max_influence = 0;
+      update(heap, round, (NodeId)0, (NodeId)n);
+      // parallel_for(0, n, [&](size_t i){
+      //   if (influence[i] > max_influence){
+      //     influence[i] = compute(i);
+      //     if (influence[i]>max_influence){
+      //       write_max(&max_influence, influence[i],
+      //         [&](size_t a, size_t b){return a<b;});
+      //     }
+      //   }
+      // });
     }
-    tt.start();
+    NodeId mid = n>>1;
+    seed = heap[mid];
+    // seed = parlay::max_element(influence) - influence.begin();
+    cout << "seed " << seed <<" influence " << influence[seed] << endl;
     float influence_gain = influence[seed] / (R + 0.0);
     seeds[round] = {seed, influence_gain};
     influence[seed] = 0;
-    update(influence, heap, (NodeId)0, (NodeId)n);
     is_seed[seed] = true;
+    time_stamp[seed] = round+1;
     parallel_for(0, R, [&](size_t r) {
       auto center = std::get<0>(get_center(r, seed));
       if (center.has_value()) {

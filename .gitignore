@@ -10,6 +10,8 @@ union_find
 tarjan_scc
 Tarjan_scc
 log
+test
+test.cpp
 sample_graph.sh
 data/*
 general_cascade
