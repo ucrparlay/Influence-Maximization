@@ -119,7 +119,6 @@ void CompactInfluenceMaximizer::init_sketches() {
     influence[i]=0;
   });
   center_cnt = parlay::scan_inplace(center_id);
-  cout << "center_cnt: " << center_cnt << endl;
 
   sketches = sequence(R, sequence<size_t>(center_cnt));
   auto find = gbbs::find_variants::find_compress;
@@ -157,31 +156,50 @@ void CompactInfluenceMaximizer::init_sketches() {
     t_sort.stop();
     t_sketch.start();
 
-    parallel_for(0, n, [&](size_t i){
-      if (i == 0 || belong[i].first != belong[i-1].first){
-        NodeId center;
-        bool meet_center = false;
-        NodeId cc_cnt=0;
+    sequence<NodeId> offset(n);
+    offset[0]=0;
+    parallel_for(1, n, [&](size_t i){
+      if (belong[i-1].first != belong[i].first){
+        offset[i]=1;
+      }else{
+        offset[i]=0;
+      }
+    });
+    auto n_cc = scan_inclusive_inplace(offset) +1;
+    sequence<NodeId> center_root(n_cc);
+    sequence<NodeId> cc_offset(n_cc+1);
+    parallel_for(0,n,[&](size_t i){
+      if ( i== 0 || belong[i-1].first != belong[i].first){
+        NodeId cc_i = offset[i];
+        assert(cc_i < n_cc);
+        cc_offset[cc_i] = i;
         for (auto j = i; j<n; j++){
-          if (j>i && belong[j].first!= belong[j-1].first){
+          if (j > i && belong[j].first!=belong[j-1].first){
             break;
           }
-          if (is_center[j]){
-            if (!meet_center){
-              meet_center = true;
-              center = center_id[j];
-            }else{
-              sketches[r][center_id[j]] = center;
-            }
+          NodeId v = belong[j].second;
+          if (is_center[v]){
+            center_root[cc_i] = center_id[v];
+            break;
           }
-          cc_cnt++;
         }
-        if (meet_center){
-          sketches[r][center] = TOP_BIT | cc_cnt;
+      }
+    });
+    cc_offset[n_cc]= n;
+    parallel_for(0, n, [&](size_t i){
+      NodeId i_idx = offset[i];
+      assert(i_idx < n_cc);
+      NodeId cc_cnt = cc_offset[i_idx+1] - cc_offset[i_idx];
+      NodeId root = center_root[i_idx];
+      NodeId v = belong[i].second;
+      influence[v]+= cc_cnt;
+      if (is_center[v]){
+        NodeId center_i = center_id[v];
+        if (center_i == root){
+          sketches[r][center_i] = TOP_BIT | cc_cnt;
+        }else{
+          sketches[r][center_i] = root;
         }
-        parallel_for(i, i+cc_cnt, [&](size_t j){
-          influence[j] += cc_cnt;
-        });
       }
     });
     t_sketch.stop();
