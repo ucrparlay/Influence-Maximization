@@ -39,8 +39,7 @@ int main(int argc, char* argv[]){
       for (auto t: seeds) cout << t.first << ' ';
       cout << endl;
       return 0;
-    }
-    if (P.getOption("-pmc")){
+    }else if (P.getOption("-pmc")){
       timer t_pmc;
       t_pmc.start();
       DirectedInfluenceMaximizer pmc_solver(graph, R);
@@ -55,9 +54,7 @@ int main(int argc, char* argv[]){
       //   cout << x.first << " ";
       // }
       // cout << endl;
-    }
-    
-    if (P.getOption("-union_find")){
+    }else{
       InfluenceMaximizer IM_solver(graph);
       timer t_init;
       float cost;
@@ -70,6 +67,7 @@ int main(int argc, char* argv[]){
       auto seeds_spread = IM_solver.select_seeds(k, R, CELF);
       cost = t_select.stop();
       cout << "select time: " << cost  << endl;
+      cout << "seeds: ";
       for (auto x: seeds_spread) {
         cout << x.first << " ";
       }
