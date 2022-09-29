@@ -7,22 +7,22 @@ graphs = [
     'Slashdot_sym',
     'DBLP_sym',
     'Youtube_sym',
-    # 'Orkut_sym',
-    # 'LiveJournal_sym',
-    # 'Twitter_sym',
-    # 'Friendster_sym',
-    # 'Sd_arc',
-    # 'USA_sym',
-    # 'GE_sym',
-    # 'HT-5',
-    # 'HH-5_sym',
-    # 'Ch-5_sym',
-    # 'GL-5_sym',
-    # 'COS-5_sym',
-    # 'SQR_sym',
-    # 'SQR-S_sym',
-    # 'REC_sym',
-    # 'REC-S_sym',
+    'Orkut_sym',
+    'LiveJournal_sym',
+    'Twitter_sym',
+    'Friendster_sym',
+    'Sd_arc',
+    'USA_sym',
+    'GE_sym',
+    'HT-5',
+    'HH-5_sym',
+    'Ch-5_sym',
+    'GL-5_sym',
+    'COS-5_sym',
+    'SQR_sym',
+    'SQR-S_sym',
+    'REC_sym',
+    'REC-S_sym',
 ]
 columns = [
     'init_time',
@@ -146,14 +146,16 @@ def main():
     # print(data['im']['seeds'])
     # for compact in [0.05, 0.1, 0.2, 0.3, 0.5, 1.0]:
     for command in [0.05]:
+        # seeds_cmp = sorted(data[compact]['seeds'])
+        # seeds_im = sorted(data['im']['seeds'])
         seeds_cmp = data[compact]['seeds']
         seeds_im = data['im']['seeds']
         for i in range(len(graphs)):
             for j in range(len(seeds_im[i])):
                 # print (f'{seeds_im[i][j]} {seeds_cmp[i][j]}')
                 if (eval(seeds_im[i][j]) != eval(seeds_cmp[i][j])):
-                    print(f'check fail at graph {graphs[i]} compact {compact} round {j}')
-                    break
+                    print(f'check fail at graph {graphs[i]} compact {compact} round {j} im {seeds_im[i][j]} compact {seeds_cmp[i][j]}')
+                    
             
 
     with open('excel.txt', 'w') as f:
