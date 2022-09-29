@@ -235,7 +235,7 @@ void CompactInfluenceMaximizer::update(
           sequence<NodeId>& tree, 
           int round, NodeId start, NodeId end){
   if (start +1 == end){
-    if (influence[start] >= max_influence){ // >
+    if (influence[start] > max_influence){
       if (time_stamp[start]!= round){
         influence[start] = compute(start);
         time_stamp[start] = round;
@@ -249,12 +249,12 @@ void CompactInfluenceMaximizer::update(
   }
   NodeId m = (start+end)>>1;
   auto root = tree[m];
-  if (influence[root] < max_influence){ // <=
+  if (influence[root] <= max_influence){
     if (time_stamp[root] != round){
       return;
     }
   }
-  if (influence[root] >= max_influence){ // >
+  if (influence[root] > max_influence){
     if (time_stamp[root] != round){
       influence[root] = compute(root);
       time_stamp[root] = round;
@@ -277,16 +277,16 @@ void CompactInfluenceMaximizer::update(
   NodeId r_idx = (m+end)>>1;
   auto left = (l_idx == start)? start: tree[l_idx];
   auto right = (r_idx == m)? m: tree[r_idx];
-  // if (influence[left]==influence[right]){
-  //   if (time_stamp[right] == round && time_stamp[left]!= round){
-  //     tree[m]=right;
-  //   }else{
-  //     tree[m]=left;
-  //   }
-  // }else{
-  //   tree[m]= influence[left] > influence[right]? left:right; 
-  // }
-  tree[m] = influence[left] >= influence[right]? left:right;
+  if (influence[left]==influence[right]){
+    if (time_stamp[right] == round && time_stamp[left]!= round){
+      tree[m]=right;
+    }else{
+      tree[m]=left;
+    }
+  }else{
+    tree[m]= influence[left] > influence[right]? left:right; 
+  }
+  // tree[m] = influence[left] >= influence[right]? left:right;
   return;
 }
 
@@ -306,15 +306,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     }else{
       max_influence = 0;
       update(heap, round, (NodeId)0, (NodeId)n);
-      // parallel_for(0, n, [&](size_t i){
-      //   if (influence[i] > max_influence){
-      //     influence[i] = compute(i);
-      //     if (influence[i]>max_influence){
-      //       write_max(&max_influence, influence[i],
-      //         [&](size_t a, size_t b){return a<b;});
-      //     }
-      //   }
-      // });
     }
     NodeId mid = (0+n)>>1;
     seed = heap[mid];
