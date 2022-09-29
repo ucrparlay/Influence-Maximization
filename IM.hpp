@@ -167,6 +167,7 @@ sequence<pair<NodeId,float>> InfluenceMaximizer::select_seeds(int k, size_t R, b
     auto max_influence_it = parlay::max_element(influence);
     NodeId seed = max_influence_it - influence.begin();
     float influence_gain = influence[seed]/(R+0.0);
+    // cout << "round 0 seed " << seed << " influence " << influence[seed] << endl;
     seeds[0]=make_pair(seed, influence_gain);
     parallel_for(0, R, [&](size_t r){
             size_t p_seed = sketches[r][seed];
@@ -201,6 +202,7 @@ sequence<pair<NodeId,float>> InfluenceMaximizer::select_seeds(int k, size_t R, b
           max_influence_it = parlay::max_element(influence);
         }
         seed = max_influence_it - influence.begin();
+        // cout << "round " << t << " seed " << seed << " influence "<< influence[seed] << endl;
         influence_gain = max_influence/(R+0.0);
         seeds[t]=make_pair(seed, influence_gain);
         parallel_for(0, R, [&](size_t r){

@@ -234,11 +234,8 @@ size_t CompactInfluenceMaximizer::compute(NodeId i){
 void CompactInfluenceMaximizer::update(
           sequence<NodeId>& tree, 
           int round, NodeId start, NodeId end){
-  // if (round == 11){
-  //   cout << start << " " << end << " " << max_influence << endl;
-  // }
   if (start +1 == end){
-    if (influence[start] > max_influence){
+    if (influence[start] >= max_influence){ // >
       if (time_stamp[start]!= round){
         influence[start] = compute(start);
         time_stamp[start] = round;
@@ -252,15 +249,12 @@ void CompactInfluenceMaximizer::update(
   }
   NodeId m = (start+end)>>1;
   auto root = tree[m];
-  // if (round == 11){
-  //   cout <<"m " << m << endl;
-  // }
-  if (influence[root] <= max_influence){
+  if (influence[root] < max_influence){ // <=
     if (time_stamp[root] != round){
       return;
     }
   }
-  if (influence[root] > max_influence){
+  if (influence[root] >= max_influence){ // >
     if (time_stamp[root] != round){
       influence[root] = compute(root);
       time_stamp[root] = round;
@@ -268,9 +262,10 @@ void CompactInfluenceMaximizer::update(
       write_max(&max_influence, influence[root], 
         [&](size_t a, size_t b){return a<b;});
       }
-    }else{
-      cout << "not likely to happen" << endl;
     }
+    // else{
+    //   cout << "not likely to happen" << endl;
+    // }
   }
 
   par_do(
@@ -282,18 +277,16 @@ void CompactInfluenceMaximizer::update(
   NodeId r_idx = (m+end)>>1;
   auto left = (l_idx == start)? start: tree[l_idx];
   auto right = (r_idx == m)? m: tree[r_idx];
-  if (influence[left]==influence[right]){
-    if (time_stamp[right] == round && time_stamp[left]!= round){
-      tree[m]=right;
-    }else{
-      tree[m]=left;
-    }
-  }else{
-    tree[m]= influence[left] > influence[right]? left:right; 
-  }
-  // if (round == 11){
-  //   cout << start << " " << end << " " << tree[m] << " max_influence " << max_influence<< endl;
+  // if (influence[left]==influence[right]){
+  //   if (time_stamp[right] == round && time_stamp[left]!= round){
+  //     tree[m]=right;
+  //   }else{
+  //     tree[m]=left;
+  //   }
+  // }else{
+  //   tree[m]= influence[left] > influence[right]? left:right; 
   // }
+  tree[m] = influence[left] >= influence[right]? left:right;
   return;
 }
 
@@ -326,11 +319,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     NodeId mid = (0+n)>>1;
     seed = heap[mid];
     // seed = parlay::max_element(influence) - influence.begin();
-    cout << "seed " << seed <<" influence " << influence[seed] << endl;
+    // cout << "round " << round <<  " seed " << seed << " influence " << influence[seed] << endl;
     // cout << "max_influence " << max_influence << endl;
-    if (round == 74){
-      cout << "influence[10616] " << influence[10616] << " compute(10616) " << compute(10616)<< " round " << round << endl;
-    }
     float influence_gain = influence[seed] / (R + 0.0);
     seeds[round] = {seed, influence_gain};
     influence[seed] = 0;
