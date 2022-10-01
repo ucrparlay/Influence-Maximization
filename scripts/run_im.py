@@ -37,8 +37,8 @@ def run_im_compact(graph, w=0.1, compact=0.05):
 
 
 def run_im_compact_all():
-    # for compact in [0.05, 0.1, 0.2, 0.3, 0.5, 1.0]:
-    for compact in [0.05]:
+    for compact in [0.05, 0.1, 0.2, 0.3, 0.5, 1.0]:
+    # for compact in [0.05]:
         for g in graph.get_small_graphs():
             run_im_compact(g, 0.1, compact)
         for g in graph.get_large_graphs():
@@ -50,5 +50,5 @@ def run_im_compact_all():
 
 
 if __name__ == '__main__':
-    # run_im_all()
+    run_im_all()
     run_im_compact_all()

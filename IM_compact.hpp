@@ -309,6 +309,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     }
     NodeId mid = (0+n)>>1;
     seed = heap[mid];
+    assert(time_stamp[seed] == round);
     // seed = parlay::max_element(influence) - influence.begin();
     // cout << "round " << round <<  " seed " << seed << " influence " << influence[seed] << endl;
     // cout << "max_influence " << max_influence << endl;
