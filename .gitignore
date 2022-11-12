@@ -19,4 +19,6 @@ seeds_*
 *.sh
 */__pycache__
 scripts/*.txt
+scripts/R/*
+scripts/R_001/*
 *.sh

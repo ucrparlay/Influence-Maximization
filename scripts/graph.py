@@ -33,8 +33,10 @@ knn_graphs = [
 ]
 
 
-small_graph_dir = '/data/lwang323/graph/bin/'
-large_graph_dir = '/data/graphs/bin/'
+small_graph_dir = '/data0/lwang323/graph/bin/'
+large_graph_dir = '/data0/graphs/bin/'
+knn_graph_dir = '/data0/graphs/knn/'
+grid_graph_dir = '/data0/graphs/synthetic/'
 
 
 def get_small_graphs():
@@ -46,11 +48,11 @@ def get_large_graphs():
 
 
 def get_grid_graphs():
-    return list(map(lambda g: large_graph_dir + g, grid_graphs))
+    return list(map(lambda g: grid_graph_dir + g, grid_graphs))
 
 
 def get_knn_graphs():
-    return list(map(lambda g: large_graph_dir + g, knn_graphs))
+    return list(map(lambda g: knn_graph_dir + g, knn_graphs))
 
 
 def get_all_graphs():
