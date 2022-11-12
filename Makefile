@@ -60,7 +60,7 @@ IM: IM.cpp IM.hpp union_find.hpp IM_compact.hpp PMC.hpp PrunedEstimater.hpp $(CO
 # bfs: bfs.cpp bfs.hpp $(COMMON)
 # 	$(CC) $(CPPFLAGS) bfs.cpp -o bfs
 
-general_cascade: general_cascade.cpp general_cascade.hpp $(COMMON)
+general_cascade: general_cascade.cpp BFS_simulate.hpp bfs.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) general_cascade.cpp -o general_cascade
 
 scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp 
