@@ -84,10 +84,17 @@ def analyse_im_seeds_results_all():
                 lines.append('\n')
                 f.write(' '.join(lines))            
 
-
+def move_graph():
+    graphs = graph.get_small_graphs()+ graph.get_large_graphs()\
+            +graph.get_knn_graphs()+graph.get_grid_graphs()
+    print(graphs)
+    for g in graphs:
+        subprocess.call(f'scp {g} xe-01:/home/csgrads/lwang323/data/', shell=True)
+    
 
 if __name__ == '__main__':
     # analyse_im_seeds_all()
-    analyse_im_seeds(graph.small_graph_dir+'HepPh_sym.bin', 0.01)
-    analyse_im_seeds_results_all()
+    # analyse_im_seeds(graph.small_graph_dir+'HepPh_sym.bin', 0.01)
+    # analyse_im_seeds_results_all()
     # analyse_im_seeds(graph.knn_graph_dir+'CHEM_5_sym.bin', 0.2)
+    move_graph()
