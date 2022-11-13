@@ -59,25 +59,6 @@ def get_all_graphs():
     return get_small_graphs() + get_large_graphs() + get_grid_graphs() + get_knn_graphs()
 
 
-def get_directed_graphs():
-    return [
-        '/data/lwang323/graph/bin/Epinions1.bin',
-        '/data/lwang323/graph/bin/Slashdot.bin',
-        # '/data/graphs/bin/soc-LiveJournal1.bin',
-        # '/data/graphs/bin/twitter.bin',
-        # '/data/graphs/bin/sd_arc.bin',
-        '/data/graphs/bin/HT_5.bin',
-        # '/data/graphs/bin/Household.lines_5.bin',
-        # '/data/graphs/bin/CHEM_5.bin',
-        # '/data/graphs/bin/GeoLifeNoScale_5.bin',
-        # '/data/graphs/bin/Cosmo50_5.bin',
-        # '/data/graphs/bin/grid_4000_4000.bin',
-        # '/data/graphs/bin/grid_1000_10000.bin',
-        # '/data/graphs/bin/grid_4000_4000_03.bin',
-        # '/data/graphs/bin/grid_1000_10000_03.bin',
-    ]
-
-
 if __name__ == '__main__':
-    print(get_all_graphs())
-    print(get_directed_graphs())
+    for g in get_all_graphs():
+        print(g)
