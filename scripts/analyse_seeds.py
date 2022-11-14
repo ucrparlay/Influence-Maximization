@@ -93,8 +93,8 @@ def move_graph():
     
 
 if __name__ == '__main__':
-    # analyse_im_seeds_all()
+    analyse_im_seeds_all()
     # analyse_im_seeds(graph.small_graph_dir+'HepPh_sym.bin', 0.01)
     # analyse_im_seeds_results_all()
     # analyse_im_seeds(graph.knn_graph_dir+'CHEM_5_sym.bin', 0.2)
-    move_graph()
+    # move_graph()
