@@ -1,5 +1,5 @@
 // #include "general_cascade.hpp"
-#include "BFS_simulate.hpp"
+#include "BFS_cascade.hpp"
 #include "graph.hpp"
 #include "parseCommandLine.hpp"
 
