@@ -54,16 +54,17 @@ int main(int argc, char* argv[]) {
   char* graph_file = argv[1];
   char* seeds_file = argv[2];
   auto graph = read_graph(graph_file);
-  float w = P.getOptionDouble("-w", 0.1);
+  float w = P.getOptionDouble("-w", 0.02);
   int num_iter = P.getOptionInt("-i", 20000);
   // bool random = P.getOption("-random");
   cout << "n: " << graph.n << " m: " << graph.m << endl;
   BFS bfs_solver(graph, w);
   GeneralCascade gc(bfs_solver);
   auto seeds = ReadSeeds(seeds_file);
-  sequence<int> K = {50,100,150,200};
+  // sequence<int> K = {50,100,150,200};
   timer evalute_time;
-  for (auto k: K){
+  // for (auto k: K){
+  int k = 100;
     for (size_t i = 0; i<seeds.size(); i++){
       sequence<NodeId> seed_i = seeds[i];
       cout << "R is 2^" << i << " k is " << k << endl;
@@ -72,7 +73,7 @@ int main(int argc, char* argv[]) {
       cout << "time: " << evalute_time.stop() << endl;
       cout << res << endl;
     }
-  }
+  // }
 
   return 0;
 }

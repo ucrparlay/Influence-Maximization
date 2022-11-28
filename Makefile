@@ -21,7 +21,7 @@ else
 CC = g++
 endif
 
-CPPFLAGS = -std=c++17 -Wall -Wextra -Werror $(INTN) $(INTE) $(BREAK) $(SP_BREAK)
+CPPFLAGS = -std=c++17 -Wall -Wextra -Werror $(INTN) $(INTE) $(BREAK) $(SP_BREAK) -I/home/csgrads/lwang323/include/
 
 ifdef CILKPLUS
 CPPFLAGS += -DPARLAY_CILKPLUS -DCILK -fcilkplus

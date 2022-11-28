@@ -17,6 +17,7 @@ struct GeneralCascade {
 
   double Run(const parlay::sequence<NodeId>& seeds, int num_iter) {
     size_t influence = 0;
+    BFS_simulate.rand_seed = 0;
     for (int i = 0; i<num_iter; i++){
         influence+=BFS_simulate.bfs(seeds);
     }
