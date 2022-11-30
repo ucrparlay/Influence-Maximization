@@ -28,9 +28,12 @@ class BFS {
   size_t sparse_update(sequence<bool>& dst);
 
  public:
+  Hash_Edge hash_edge;
   size_t rand_seed;
   size_t num_round;
-  size_t bfs(const sequence<NodeId>& seeds);
+  size_t bfs(const sequence<NodeId>& seeds, Hash_Edge _hash_edge);
+  size_t bfs_sequence(const sequence<NodeId>& seeds, Hash_Edge _hash_edge);
+  size_t get_n(){return n;}
   BFS() = delete;
   BFS(Graph& G, float _w): graph(G), w(_w) {
     n = graph.n;
@@ -50,20 +53,20 @@ size_t BFS::sparse_update(sequence<bool>& dst) {
   auto non_zeros = parlay::scan_inplace(degree.cut(0, n_front));
   degree[n_front] = non_zeros;
   parallel_for(0, n_front,[&](size_t i) {
-        NodeId node = front[i];
-        parallel_for(degree[i], degree[i + 1],[&](size_t j) {
-              size_t self_rand_seed = rand_seed+j;
-              EdgeId offset = j - degree[i];
-              NodeId ngb_node = graph.E[graph.offset[node] + offset];
-              if (_hash((EdgeId)(self_rand_seed + j)) < w*UINT_E_MAX  &&  dst[ngb_node] == false) {
-                edge_flag[j] = atomic_compare_and_swap(
-                    &dst[ngb_node], false, true);
-                if (edge_flag[j]) edge_data[j] = ngb_node;
-              } else {
-                edge_flag[j] = false;
-              }
-            },
-            2048);
+        NodeId u = front[i];
+        parallel_for(0, graph.offset[u+1]-graph.offset[u],[&](size_t j) {
+          EdgeId offset = degree[i];
+          NodeId v = graph.E[graph.offset[u] + j];
+          // if (_hash((EdgeId)(self_rand_seed + j)) < w*UINT_E_MAX  &&  dst[ngb_node] == false) {
+          if ((dst[v] == false) && hash_edge(u, v, w)){
+            edge_flag[offset+j] = atomic_compare_and_swap(&dst[v], false, true);
+            if (edge_flag[offset+j]){
+              edge_data[degree[i]+j] = v;
+            }
+          } else {
+            edge_flag[offset+j] = false;
+          } 
+        },2048);
       },
       1);  // may need to see the block size
   rand_seed += non_zeros;
@@ -81,12 +84,13 @@ size_t BFS::sparse_update(sequence<bool>& dst) {
 
 
 
-size_t BFS::bfs(const sequence<NodeId>& seeds) {
+size_t BFS::bfs(const sequence<NodeId>& seeds, Hash_Edge _hash_edge) {
+  hash_edge = _hash_edge;
   sequence<bool> dst(graph.n);
   parallel_for(0, graph.n, [&](NodeId i) { dst[i] = false; });
   parallel_for(0, seeds.size(), [&](size_t i){
     front[i]=seeds[i];
-    dst[i]=true;
+    dst[seeds[i]]=true;
   });
   size_t n_visit=0;
   n_front = seeds.size();
@@ -97,6 +101,31 @@ size_t BFS::bfs(const sequence<NodeId>& seeds) {
     n_front = sparse_update(dst);
   }
   return n_visit;
+}
+
+size_t BFS::bfs_sequence(const sequence<NodeId>& seeds, Hash_Edge _hash_edge){
+  hash_edge = _hash_edge;
+  sequence<bool> dst(graph.n);
+  parallel_for(0, graph.n, [&](NodeId i){dst[i]=false;});
+  queue<NodeId> Q;
+  for (auto s : seeds){
+    Q.push(s);
+    dst[s]=true;
+  }
+  size_t cnt = seeds.size();
+  while (!Q.empty()){
+    NodeId u = Q.front();
+    Q.pop();
+    for (auto j = graph.offset[u]; j < graph.offset[u+1]; j++){
+      NodeId v = graph.E[j];
+      if (hash_edge(u,v,w) && !dst[v]){
+        dst[v]=true;
+        Q.push(v);
+        cnt++;
+      }
+    }
+  }
+  return cnt;
 }
 
 #endif

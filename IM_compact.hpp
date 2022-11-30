@@ -24,7 +24,7 @@ class CompactInfluenceMaximizer {
   sequence<Hash_Edge> hash_edges;
   sequence<bool> is_center, is_seed;
   sequence<size_t> center_id;
-  sequence<sequence<size_t>> sketches;
+  sequence<sequence<NodeId>> sketches;
   // sequence<NodeId> permute;
   sequence<size_t> influence;
 
@@ -44,9 +44,9 @@ class CompactInfluenceMaximizer {
     n = G.n;
     hash_edges = sequence<Hash_Edge>(R);
     parallel_for(0, R, [&](size_t r) {
-      hash_edges[r].graph_id = r;
-      hash_edges[r].n = G.n;
-      hash_edges[r].forward = true;
+      hash_edges[r].hash_graph_id = _hash((EdgeId)r);
+      // hash_edges[r].n = G.n;
+      // hash_edges[r].forward = true;
     });
     is_center = sequence<bool>(n);
     is_seed = sequence<bool>(n);
@@ -99,11 +99,12 @@ void CompactInfluenceMaximizer::init_sketches() {
   timer tt;
   sequence<size_t> _influence(n); 
   parallel_for(0, n, [&](size_t i) {
-    Hash_Edge hash_edge;  // use hash_edge as random generator
-    hash_edge.graph_id = i + R;
-    hash_edge.n = G.n;
-    hash_edge.forward = true;
-    if (hash_edge(i, i, compact_rate)) {
+    // Hash_Edge hash_edge;  // use hash_edge as random generator
+    // hash_edge.graph_id = i + R;
+    // hash_edge.n = G.n;
+    // hash_edge.forward = true;
+    // if (hash_edge(i, i, compact_rate)) {
+    if (_hash((NodeId)i) < compact_rate * UINT_N_MAX){
       is_center[i] = true;
       center_id[i] = 1;
     }
@@ -111,7 +112,7 @@ void CompactInfluenceMaximizer::init_sketches() {
   });
   center_cnt = parlay::scan_inplace(center_id);
 
-  sketches = sequence(R, sequence<size_t>(center_cnt));
+  sketches = sequence(R, sequence<NodeId>(center_cnt));
   auto find = gbbs::find_variants::find_compress;
   auto splice = gbbs::splice_variants::split_atomic_one;
   auto unite =
@@ -122,6 +123,7 @@ void CompactInfluenceMaximizer::init_sketches() {
   timer t_union_find;
   timer t_sketch;
   timer t_sort;
+  bool v3_v31 = true;
   for (size_t r = 0; r < R; r++) {
     // cout << "r = " << r << endl;
     t_union_find.start();
@@ -140,6 +142,9 @@ void CompactInfluenceMaximizer::init_sketches() {
       auto l =find(i,label);
       belong[i]=make_pair(l,i);
     });
+    if (find(3, label) != find(31, label)){
+      v3_v31 = false;
+    }
     t_union_find.stop();
     t_sort.start();
     // sort_inplace(belong);
@@ -204,6 +209,7 @@ void CompactInfluenceMaximizer::init_sketches() {
   cout << "union time time: " << t_union_find.get_total() << endl;
   cout << "sort time: " << t_sort.get_total() << endl;
   cout << "sketch time: " << t_sketch.get_total() << endl;
+  cout << "vertex 3 is equal to vertex 31: " << v3_v31 << endl;
 }
 
 size_t CompactInfluenceMaximizer::compute(NodeId i){
@@ -374,7 +380,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     // ---beging winning tree---
     // seed_idx = select_winning_tree(renew, heap, round);
     // seed = permute[seed_idx];
-    seed = select_winning_tree(renew, heap, round);
+    // seed = select_winning_tree(renew, heap, round);
     
     // ---end winning tree---
 
@@ -383,7 +389,16 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     // ---end write max---
 
     // ---begin greedy ----
-    // seed = select_greedy(round);
+    seed = select_greedy(round);
+    if (round == 1){
+      cout << "round 1: " ;
+      parallel_for(0, n, [&](size_t i){
+        if (influence[i]==0){
+          printf("%ld ", i);
+        }
+      });
+      cout << endl;
+    }
     // --- end greedy ---
     // auto influence_max = max_element(influence);
     // auto id = influence_max-influence.begin();
@@ -409,6 +424,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
         }
       }
     });
+    cout << "influence[31] " << influence[31] << " compute(31) " << compute(31) << endl;
     tt.stop();
   }
   cout << "select_seeds time: " << tt.get_total() << endl;

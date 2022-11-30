@@ -63,17 +63,17 @@ IM: IM.cpp IM.hpp union_find.hpp IM_compact.hpp PMC.hpp PrunedEstimater.hpp $(CO
 general_cascade: general_cascade.cpp BFS_cascade.hpp bfs.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) general_cascade.cpp -o general_cascade
 
-scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp 
-	$(CC) $(CPPFLAGS) scc.cpp -o scc
-tarjan_scc: tarjan_scc.hpp tarjan_scc.cpp $(COMMON)
-	$(CC) $(CPPFLAGS) tarjan_scc.cpp -o tarjan_scc
-Tarjan_scc: Tarjan_scc.hpp Tarjan_scc.cpp $(COMMON)
-	$(CC) $(CPPFLAGS) Tarjan_scc.cpp -o Tarjan_scc
-reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
-	$(CC) $(CPPFLAGS) reach.cpp -o reach
+# scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp 
+# 	$(CC) $(CPPFLAGS) scc.cpp -o scc
+# tarjan_scc: tarjan_scc.hpp tarjan_scc.cpp $(COMMON)
+# 	$(CC) $(CPPFLAGS) tarjan_scc.cpp -o tarjan_scc
+# Tarjan_scc: Tarjan_scc.hpp Tarjan_scc.cpp $(COMMON)
+# 	$(CC) $(CPPFLAGS) Tarjan_scc.cpp -o Tarjan_scc
+# reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
+# 	$(CC) $(CPPFLAGS) reach.cpp -o reach
 
-union_find: union_find.cpp union_find.hpp $(COMMON)
-	$(CC) $(CPPFLAGS) union_find.cpp -o union_find
+# union_find: union_find.cpp union_find.hpp $(COMMON)
+# 	$(CC) $(CPPFLAGS) union_find.cpp -o union_find
 
 clean:
 	rm -f graph IM general_cascade scc tarjan_scc reach union_find
