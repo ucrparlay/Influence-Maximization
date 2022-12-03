@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
   TARJAN_SCC SCC_P(graph, hash_edge);
   SCC_P.tarjan();
   double scc_cost;
-  size_t n_scc;
+  size_t n_scc=0;
   for (int i = 0; i < repeat; i++) {
     SCC_P.clear();
     t.start();

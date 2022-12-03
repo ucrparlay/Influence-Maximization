@@ -14,6 +14,7 @@
 
 using namespace std;
 
+#define hash_edge_id(j,w) (_hash((EdgeId)(rand_seed + j)) < w*UINT_E_MAX)
 class BFS {
  private:
   Graph graph;
@@ -34,6 +35,7 @@ class BFS {
   size_t bfs(const sequence<NodeId>& seeds, Hash_Edge _hash_edge);
   size_t bfs_sequence(const sequence<NodeId>& seeds, Hash_Edge _hash_edge);
   size_t get_n(){return n;}
+  size_t get_m(){return graph.m;}
   BFS() = delete;
   BFS(Graph& G, float _w): graph(G), w(_w) {
     n = graph.n;
@@ -57,8 +59,8 @@ size_t BFS::sparse_update(sequence<bool>& dst) {
         parallel_for(0, graph.offset[u+1]-graph.offset[u],[&](size_t j) {
           EdgeId offset = degree[i];
           NodeId v = graph.E[graph.offset[u] + j];
-          // if (_hash((EdgeId)(self_rand_seed + j)) < w*UINT_E_MAX  &&  dst[ngb_node] == false) {
-          if ((dst[v] == false) && hash_edge(u, v, w)){
+          if (hash_edge_id(graph.offset[u]+j, w) && dst[v]==false){
+          // if ((dst[v] == false) && hash_edge(u, v, w)){
             edge_flag[offset+j] = atomic_compare_and_swap(&dst[v], false, true);
             if (edge_flag[offset+j]){
               edge_data[degree[i]+j] = v;
@@ -69,7 +71,7 @@ size_t BFS::sparse_update(sequence<bool>& dst) {
         },2048);
       },
       1);  // may need to see the block size
-  rand_seed += non_zeros;
+  // rand_seed += non_zeros;
 #if defined(DEBUG)
   timer pack_timer;
   pack_timer.start();
@@ -118,12 +120,14 @@ size_t BFS::bfs_sequence(const sequence<NodeId>& seeds, Hash_Edge _hash_edge){
     Q.pop();
     for (auto j = graph.offset[u]; j < graph.offset[u+1]; j++){
       NodeId v = graph.E[j];
-      if (hash_edge(u,v,w) && !dst[v]){
+      // if (hash_edge(u,v,w) && !dst[v]){
+      if (hash_edge_id(j,w) && !dst[v]){
         dst[v]=true;
         Q.push(v);
         cnt++;
       }
     }
+    // rand_seed+=graph.offset[u+1]-graph.offset[u];
   }
   return cnt;
 }

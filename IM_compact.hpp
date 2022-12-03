@@ -123,7 +123,7 @@ void CompactInfluenceMaximizer::init_sketches() {
   timer t_union_find;
   timer t_sketch;
   timer t_sort;
-  bool v3_v31 = true;
+  // bool v3_v31 = true;
   for (size_t r = 0; r < R; r++) {
     // cout << "r = " << r << endl;
     t_union_find.start();
@@ -142,9 +142,9 @@ void CompactInfluenceMaximizer::init_sketches() {
       auto l =find(i,label);
       belong[i]=make_pair(l,i);
     });
-    if (find(3, label) != find(31, label)){
-      v3_v31 = false;
-    }
+    // if (find(3, label) != find(31, label)){
+    //   v3_v31 = false;
+    // }
     t_union_find.stop();
     t_sort.start();
     // sort_inplace(belong);
@@ -209,7 +209,7 @@ void CompactInfluenceMaximizer::init_sketches() {
   cout << "union time time: " << t_union_find.get_total() << endl;
   cout << "sort time: " << t_sort.get_total() << endl;
   cout << "sketch time: " << t_sketch.get_total() << endl;
-  cout << "vertex 3 is equal to vertex 31: " << v3_v31 << endl;
+  // cout << "vertex 3 is equal to vertex 31: " << v3_v31 << endl;
 }
 
 size_t CompactInfluenceMaximizer::compute(NodeId i){
@@ -379,7 +379,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     tt.start();
     // ---beging winning tree---
     // seed_idx = select_winning_tree(renew, heap, round);
-    // seed = permute[seed_idx];
     // seed = select_winning_tree(renew, heap, round);
     
     // ---end winning tree---
@@ -404,7 +403,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     // auto id = influence_max-influence.begin();
     // cout << "round " << round <<  " seed " << seed << " influence " << influence[seed] << endl;
     // cout << "max_influence " << max_influence << endl;
-    cout << seed << " " << influence[seed] << endl;
+    // cout << seed << " " << influence[seed] << endl;
     // assert((id == seed) && "selected seed match with max(influence)");
     // cout << "max(influence) " << *influence_max << " id " << id << " compute[id] " << compute(id) <<endl;
     float influence_gain = influence[seed] / (R + 0.0);
@@ -424,7 +423,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
         }
       }
     });
-    cout << "influence[31] " << influence[31] << " compute(31) " << compute(31) << endl;
     tt.stop();
   }
   cout << "select_seeds time: " << tt.get_total() << endl;

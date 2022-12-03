@@ -31,6 +31,7 @@ struct GeneralCascade {
       //   cout << "check failed " << single_spread << " " << check_spread << endl;
       // }
       influence+= single_spread;
+      BFS_simulate.rand_seed += BFS_simulate.get_m();
     }
     return influence / (num_iter+0.0);
   }
