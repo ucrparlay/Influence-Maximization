@@ -390,6 +390,31 @@ void read_knn(const char* const fileName, const char* const OutFileName,
   ofs_sym.close();
 }
 
+Graph read_txt(string filename) {
+	Graph graph;
+	ifstream rf(filename);
+	if (!rf) {
+		cerr << "Cannot open file!" << endl;
+		abort();
+	}
+	rf >> graph.n >> graph.m;
+	graph.offset = sequence<EdgeId>(graph.n + 1);
+	graph.E = sequence<NodeId>(graph.m);
+  graph.W =sequence<float>(graph.m);
+	NodeId s, t; float w;
+	NodeId i = 0; size_t j = 0;
+	while (rf >> s >> t >> w) {
+		while (i <= s)
+			graph.offset[i++] = j;
+		graph.E[j] = t;
+    graph.W[j] = w;
+    j++;
+ 	}
+	graph.offset[i] = j;
+	return graph;
+}
+
+
 void read_txt(const char* const fileName, const char* const OutFileName, NodeId n){
   ifstream file(fileName, ifstream::in | ifstream::binary | ifstream::ate);
   

@@ -20,7 +20,9 @@ int main(int argc, char* argv[]){
     // bool CELF = P.getOption("-celf");
     float compact = P.getOptionDouble("-compact", 0.0);
     // thresh = P.getOptionInt("-thresh", 5);
-    Graph graph = read_graph(file);
+    Graph graph = read_txt(file);
+    graph.symmetric = true;
+    // Graph graph = read_graph(file);
     // if (w == 0.0){
     //     cout << "WIC" << endl;
     //     AssignIndegreeWeight(graph);
@@ -28,8 +30,8 @@ int main(int argc, char* argv[]){
     //     cout << "UIC w: " << w<< " R: " << R <<  endl;
     //     AssignUniWeight(graph, w);
     // }
-    AssignUniWeight(graph,w);
-    cout << "n: " << graph.n << " m: " << graph.m << endl;
+    // AssignUniWeight(graph,w);
+    cout << "n: " << graph.n << " m: " << graph.m << " w: " << w<< endl;
     if (P.getOption("-compact")) {
       timer tt;
       cout << "compact " << compact << endl;

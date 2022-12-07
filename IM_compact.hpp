@@ -379,7 +379,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     tt.start();
     // ---beging winning tree---
     // seed_idx = select_winning_tree(renew, heap, round);
-    // seed = select_winning_tree(renew, heap, round);
+    seed = select_winning_tree(renew, heap, round);
     
     // ---end winning tree---
 
@@ -388,16 +388,16 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     // ---end write max---
 
     // ---begin greedy ----
-    seed = select_greedy(round);
-    if (round == 1){
-      cout << "round 1: " ;
-      parallel_for(0, n, [&](size_t i){
-        if (influence[i]==0){
-          printf("%ld ", i);
-        }
-      });
-      cout << endl;
-    }
+    // seed = select_greedy(round);
+    // if (round == 1){
+    //   cout << "round 1: " ;
+    //   parallel_for(0, n, [&](size_t i){
+    //     if (influence[i]==0){
+    //       printf("%ld ", i);
+    //     }
+    //   });
+    //   cout << endl;
+    // }
     // --- end greedy ---
     // auto influence_max = max_element(influence);
     // auto id = influence_max-influence.begin();

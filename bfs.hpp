@@ -59,7 +59,8 @@ size_t BFS::sparse_update(sequence<bool>& dst) {
         parallel_for(0, graph.offset[u+1]-graph.offset[u],[&](size_t j) {
           EdgeId offset = degree[i];
           NodeId v = graph.E[graph.offset[u] + j];
-          if (hash_edge_id(graph.offset[u]+j, w) && dst[v]==false){
+          float _w = graph.W[graph.offset[u]+j];
+          if (hash_edge_id(graph.offset[u]+j, _w) && dst[v]==false){
           // if ((dst[v] == false) && hash_edge(u, v, w)){
             edge_flag[offset+j] = atomic_compare_and_swap(&dst[v], false, true);
             if (edge_flag[offset+j]){

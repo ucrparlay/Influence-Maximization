@@ -53,7 +53,8 @@ int main(int argc, char* argv[]) {
   CommandLine P(argc, argv);
   char* graph_file = argv[1];
   char* seeds_file = argv[2];
-  auto graph = read_graph(graph_file);
+  // auto graph = read_graph(graph_file);
+  Graph graph = read_txt(graph_file);
   float w = P.getOptionDouble("-w", 0.02);
   int num_iter = P.getOptionInt("-i", 20000);
   int k = P.getOptionInt("-k", 100);
