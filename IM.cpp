@@ -15,25 +15,22 @@ int main(int argc, char* argv[]){
     char* file = argv[1];
     size_t k = P.getOptionInt("-k", 200);
     size_t R = P.getOptionInt("-R", 200);
-    float w = P.getOptionDouble("-w", 0.0);
+    float w = P.getOptionDouble("-w", 0.02);
     // int option = P.getOptionInt("-option", 2);
     // bool CELF = P.getOption("-celf");
-    float compact = P.getOptionDouble("-compact", 0.0);
+    float compact = P.getOptionDouble("-compact", 1.0);
     // thresh = P.getOptionInt("-thresh", 5);
-    Graph graph = read_txt(file);
-    graph.symmetric = true;
-    // Graph graph = read_graph(file);
-    // if (w == 0.0){
-    //     cout << "WIC" << endl;
-    //     AssignIndegreeWeight(graph);
-    // }else{
-    //     cout << "UIC w: " << w<< " R: " << R <<  endl;
-    //     AssignUniWeight(graph, w);
-    // }
-    // AssignUniWeight(graph,w);
-    cout << "n: " << graph.n << " m: " << graph.m << " w: " << w<< endl;
+    // Graph graph = read_txt(file);
+    // graph.symmetric = true;
+    Graph graph = read_graph(file);
+    AssignUniWeight(graph,w);
+    cout << "n: " << graph.n << " m: " << graph.m << " w: " << w << " R: " << R << " k: " << k<< endl;
+    cout << "**size of graph is " << sizeof(graph) + (sizeof(NodeId)+sizeof(float))*graph.m \
+                              + sizeof(EdgeId)*graph.n << endl;
     if (P.getOption("-compact")) {
       timer tt;
+      t_first.reset();
+      t_first.start();
       cout << "compact " << compact << endl;
       CompactInfluenceMaximizer compact_IM_solver(graph, compact, R);
       compact_IM_solver.init_sketches();

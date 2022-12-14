@@ -32,27 +32,48 @@ knn_graphs = [
     # 'Cosmo50_5_sym.bin',
 ]
 
+graphs_map = {
+    'HepPh_sym.bin': 'HepPh',
+    'Epinions1_sym.bin':'Epinions1',
+    'Slashdot_sym.bin': 'Slashdot',
+    'DBLP_sym.bin': 'DBLP',
+    'Youtube_sym.bin': 'Youtube',
+    'com-orkut_sym.bin':'OK',
+    'soc-LiveJournal1_sym.bin':'LJ',
+    # 'twitter_sym.bin',
+    # 'friendster_sym.bin',
+    # 'sd_arc_sym.bin',
+    'RoadUSA_sym.bin': 'USA',
+    'Germany_sym.bin':'GER',
+    'HT_5_sym.bin':'HT5',
+    'Household.lines_5_sym.bin':'HH5',
+    'CHEM_5_sym.bin':'CHEM5',
+    'GeoLifeNoScale_5_sym.bin':'GL5',
+    # 'Cosmo50_5_sym.bin',
+    'grid_4000_4000_sym.bin':'SQR',
+    'grid_4000_4000_03_sym.bin':"SQR'",
+    'grid_1000_10000_sym.bin':'REC',
+    'grid_1000_10000_03_sym.bin':"REC'",
+}
 
-small_graph_dir = '/data0/lwang323/graph/bin/'
-large_graph_dir = '/data0/graphs/bin/'
-knn_graph_dir = '/data0/graphs/knn/'
-grid_graph_dir = '/data0/graphs/synthetic/'
+
+graph_dir = "/home/csgrads/lwang323/data/"
 
 
 def get_small_graphs():
-    return list(map(lambda g: small_graph_dir + g, small_graphs))
+    return list(map(lambda g: graph_dir + g, small_graphs))
 
 
 def get_large_graphs():
-    return list(map(lambda g: large_graph_dir + g, large_graphs))
+    return list(map(lambda g: graph_dir + g, large_graphs))
 
 
 def get_grid_graphs():
-    return list(map(lambda g: grid_graph_dir + g, grid_graphs))
+    return list(map(lambda g: graph_dir + g, grid_graphs))
 
 
 def get_knn_graphs():
-    return list(map(lambda g: knn_graph_dir + g, knn_graphs))
+    return list(map(lambda g: graph_dir + g, knn_graphs))
 
 
 def get_all_graphs():

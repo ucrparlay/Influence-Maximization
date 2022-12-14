@@ -13,7 +13,7 @@ using namespace std;
 using namespace parlay;
 
 // tree stores <influence, value's index(or saying the vertex id)>
-
+timer t_first;
 
 int thresh;
 class CompactInfluenceMaximizer {
@@ -45,17 +45,16 @@ class CompactInfluenceMaximizer {
     hash_edges = sequence<Hash_Edge>(R);
     parallel_for(0, R, [&](size_t r) {
       hash_edges[r].hash_graph_id = _hash((EdgeId)r);
-      // hash_edges[r].n = G.n;
-      // hash_edges[r].forward = true;
     });
     is_center = sequence<bool>(n);
     is_seed = sequence<bool>(n);
     center_id = sequence<size_t>(n);
     influence = sequence<size_t>(n);
-    // sequence<NodeId> vertex(n);
-    // parallel_for(0, n, [&](size_t i){vertex[i]=i;});
-    // permute = random_shuffle(vertex);
-    // cout << "initialize permutation done" << endl;
+    cout << "**size of is_center is " << sizeof(bool)*n << endl;
+    cout << "**size of is_seed is " << sizeof(bool)*n << endl;
+    cout << "**size of center_id is " << sizeof(size_t)*n << endl;
+    cout << "**size of influence is "<< sizeof(size_t)*n << endl;
+    cout << "**size of hash_edges is " << sizeof(hash_edges[0])*R << endl;
   }
   void init_sketches();
   sequence<pair<NodeId, float>> select_seeds(int k);
@@ -97,22 +96,16 @@ tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
 
 void CompactInfluenceMaximizer::init_sketches() {
   timer tt;
-  sequence<size_t> _influence(n); 
   parallel_for(0, n, [&](size_t i) {
-    // Hash_Edge hash_edge;  // use hash_edge as random generator
-    // hash_edge.graph_id = i + R;
-    // hash_edge.n = G.n;
-    // hash_edge.forward = true;
-    // if (hash_edge(i, i, compact_rate)) {
     if (_hash((NodeId)i) < compact_rate * UINT_N_MAX){
       is_center[i] = true;
       center_id[i] = 1;
     }
-    _influence[i]=0;
   });
   center_cnt = parlay::scan_inplace(center_id);
 
   sketches = sequence(R, sequence<NodeId>(center_cnt));
+  cout << "**size of sketches is " << (sizeof(NodeId)*center_cnt)*R << endl;
   auto find = gbbs::find_variants::find_compress;
   auto splice = gbbs::splice_variants::split_atomic_one;
   auto unite =
@@ -120,10 +113,15 @@ void CompactInfluenceMaximizer::init_sketches() {
                                         find_atomic_halve>(find, splice);
   sequence<NodeId> label(n);
   sequence<pair<NodeId, NodeId>> belong(n);
+  cout << "--size of label is " << sizeof(NodeId)*n << endl;
+  cout << "--size of belong is " << sizeof(pair<NodeId,NodeId>)*n << endl;
+
   timer t_union_find;
   timer t_sketch;
   timer t_sort;
   // bool v3_v31 = true;
+  cout << "--size of offset is " << sizeof(NodeId)*n << endl;
+  uint max_n_cc=0;
   for (size_t r = 0; r < R; r++) {
     // cout << "r = " << r << endl;
     t_union_find.start();
@@ -162,6 +160,9 @@ void CompactInfluenceMaximizer::init_sketches() {
       }
     });
     auto n_cc = scan_inclusive_inplace(offset) +1;
+    if (n_cc > max_n_cc){
+      max_n_cc = n_cc;
+    }
     sequence<NodeId> center_root(n_cc);
     sequence<NodeId> cc_offset(n_cc+1);
     parallel_for(0,n,[&](size_t i){
@@ -205,6 +206,8 @@ void CompactInfluenceMaximizer::init_sketches() {
   //   NodeId v = permute[i];
   //   influence[i]=_influence[v];
   // });
+  cout << "--size of center_root is " << sizeof(NodeId)*max_n_cc << endl;
+  cout << "--size of cc_offset is " << sizeof(NodeId)*(max_n_cc+1) << endl;
   cout << "init_sketches time: " << tt.stop() << endl;
   cout << "union time time: " << t_union_find.get_total() << endl;
   cout << "sort time: " << t_sort.get_total() << endl;
@@ -372,6 +375,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   sequence<pair<NodeId, float>> seeds(k);
   sequence<NodeId> heap(n);
   sequence<bool> renew(n);
+  cout << "**size of seeds is " << sizeof(pair<NodeId,float>)*k << endl;
+  cout << "..size of heap is " << sizeof(NodeId)*n << endl;
+  cout << "..size of renew is " << sizeof(bool)*n << endl;
   // NodeId seed_idx;
   NodeId seed;
   // first round
@@ -408,6 +414,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     // cout << "max(influence) " << *influence_max << " id " << id << " compute[id] " << compute(id) <<endl;
     float influence_gain = influence[seed] / (R + 0.0);
     seeds[round] = {seed, influence_gain};
+    if (round == 0){
+      cout << "Till first round time: " << t_first.stop() << endl;
+    }
     influence[seed] = 0;
     is_seed[seed] = true;
     renew[seed] = true;

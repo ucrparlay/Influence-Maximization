@@ -17,10 +17,6 @@ data/*
 general_cascade
 seeds_*
 *.sh
-*/__pycache__
-scripts/*.txt
-scripts/R/*
-scripts/R_001/*
-scripts/R_002/*
-scripts/R_005/*
-*.sh
+./Makefile
+scripts/*
+!scripts/*.py

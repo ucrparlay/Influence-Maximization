@@ -53,9 +53,10 @@ int main(int argc, char* argv[]) {
   CommandLine P(argc, argv);
   char* graph_file = argv[1];
   char* seeds_file = argv[2];
-  // auto graph = read_graph(graph_file);
-  Graph graph = read_txt(graph_file);
+  auto graph = read_graph(graph_file);
+  // Graph graph = read_txt(graph_file);
   float w = P.getOptionDouble("-w", 0.02);
+  AssignUniWeight(graph,w);
   int num_iter = P.getOptionInt("-i", 20000);
   int k = P.getOptionInt("-k", 100);
   // bool random = P.getOption("-random");
@@ -68,14 +69,14 @@ int main(int argc, char* argv[]) {
   // for (auto k: K){
   // int k = 100;
   // int k = 53;
-    for (size_t i = 0; i<seeds.size(); i++){
-      sequence<NodeId> seed_i = seeds[i];
-      cout << " k is " << k << endl;
-      evalute_time.start();
-      auto res = gc.Run(seed_i.subseq(0,k), num_iter);
-      cout << "time: " << evalute_time.stop() << endl;
-      cout << res << endl;
-    }
+  for (size_t i = 0; i<seeds.size(); i++){
+    sequence<NodeId> seed_i = seeds[i];
+    cout << " k is " << k << endl;
+    evalute_time.start();
+    auto res = gc.Run(seed_i.subseq(0,k), num_iter);
+    cout << "time: " << evalute_time.stop() << endl;
+    cout << res << endl;
+  }
   // }
 
   return 0;
