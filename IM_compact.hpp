@@ -2,8 +2,8 @@
 
 #include <optional>
 #include <unordered_set>
-#include <queue>
-#include <vector>
+// #include <queue>
+// #include <vector>
 #include "parlay/random.h"
 
 #include "get_time.hpp"
@@ -397,9 +397,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   sequence<NodeId> heap(n);
   sequence<bool> renew(n);
   // for priority queue
-  auto cmp = [&](NodeId left, NodeId right) {
-    return (influence[left] <influence[right]); };
-	std::priority_queue<NodeId, vector<NodeId>, decltype(cmp)> Q(cmp);
+  // auto cmp = [&](NodeId left, NodeId right) {
+  //   return (influence[left] <influence[right]); };
+	// std::priority_queue<NodeId, vector<NodeId>, decltype(cmp)> Q(cmp);
   
   #if defined(MEM)
   cout << "**size of seeds is " << sizeof(pair<NodeId,float>)*k << endl;
@@ -415,34 +415,34 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   for (int round = 0; round < k; round++) {
     tt.start();
     // ---begin winning tree---
-    // seed = select_winning_tree(renew, heap, round);
+    seed = select_winning_tree(renew, heap, round);
     // ---end winning tree---
 
     // ---begin priority queue---
-    if (round == 0){
-      for (NodeId i = 0; i < G.n; i++) {
-        Q.push(i);
-        heap[i]=0; // use heap as time stamp
-      }
-    }
-    #if defined(EVAL)
-      size_t _num_evals = 0;
-    #endif
-    while ((int)heap[Q.top()] != round){
-      #if defined(EVAL)
-        _num_evals++;
-      #endif
-      const NodeId u = Q.top();
-      Q.pop();
-      influence[u] = compute(u);
-      heap[u] = k; // recently scored
-      Q.push(u);
-    }
-    #if defined(EVAL)
-      cout << "re-evaluate: " << _num_evals << endl;
-      num_evals += _num_evals;
-    #endif
-    seed = Q.top();
+    // if (round == 0){
+    //   for (NodeId i = 0; i < G.n; i++) {
+    //     Q.push(i);
+    //     heap[i]=0; // use heap as time stamp
+    //   }
+    // }
+    // #if defined(EVAL)
+    //   size_t _num_evals = 0;
+    // #endif
+    // while ((int)heap[Q.top()] != round){
+    //   #if defined(EVAL)
+    //     _num_evals++;
+    //   #endif
+    //   const NodeId u = Q.top();
+    //   Q.pop();
+    //   influence[u] = compute(u);
+    //   heap[u] = k; // recently scored
+    //   Q.push(u);
+    // }
+    // #if defined(EVAL)
+    //   cout << "re-evaluate: " << _num_evals << endl;
+    //   num_evals += _num_evals;
+    // #endif
+    // seed = Q.top();
     // ---end priority queue---
 
     // ---begin write max---
