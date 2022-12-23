@@ -2,12 +2,15 @@
 
 #include <optional>
 #include <unordered_set>
+#include <queue>
+#include <vector>
 #include "parlay/random.h"
 
 #include "get_time.hpp"
 #include "graph.hpp"
 #include "parlay/sequence.h"
 #include "union_find.hpp"
+
 // #include "WinnerTree.hpp"
 using namespace std;
 using namespace parlay;
@@ -15,6 +18,9 @@ using namespace parlay;
 // tree stores <influence, value's index(or saying the vertex id)>
 timer t_first;
 
+#if defined(EVAL)
+size_t num_evals;
+#endif
 int thresh;
 class CompactInfluenceMaximizer {
  private:
@@ -27,7 +33,6 @@ class CompactInfluenceMaximizer {
   sequence<sequence<NodeId>> sketches;
   // sequence<NodeId> permute;
   sequence<size_t> influence;
-
   tuple<optional<NodeId>, bool, size_t> get_center(size_t graph_id, NodeId x);
   size_t compute(NodeId i);
   void construct(sequence<NodeId>& heap, NodeId start, NodeId end, NodeId& root);
@@ -329,6 +334,8 @@ void CompactInfluenceMaximizer::extract(
   return;
 }
 
+
+
 NodeId CompactInfluenceMaximizer::select_winning_tree(sequence<bool>& renew,
                                                       sequence<NodeId>& heap, int round){
   NodeId seed;
@@ -343,6 +350,11 @@ NodeId CompactInfluenceMaximizer::select_winning_tree(sequence<bool>& renew,
   }else{
     max_influence = 0;
     extract(heap, renew,(NodeId)0, (NodeId)n);
+    #if defined(EVAL)
+      size_t _num_evals = count(renew, true);
+      num_evals+= _num_evals;
+      cout << "re-evaluate: " << _num_evals << endl;
+    #endif
     update(heap, renew, (NodeId)0, (NodeId)n, seed);
   }
   return seed;
@@ -384,21 +396,54 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   sequence<pair<NodeId, float>> seeds(k);
   sequence<NodeId> heap(n);
   sequence<bool> renew(n);
+  // for priority queue
+  auto cmp = [&](NodeId left, NodeId right) {
+    return (influence[left] <influence[right]); };
+	std::priority_queue<NodeId, vector<NodeId>, decltype(cmp)> Q(cmp);
+  
   #if defined(MEM)
   cout << "**size of seeds is " << sizeof(pair<NodeId,float>)*k << endl;
   cout << "..size of heap is " << sizeof(NodeId)*n << endl;
   cout << "..size of renew is " << sizeof(bool)*n << endl;
+  #endif
+  #if defined(EVAL)
+  num_evals=0;
   #endif
   // NodeId seed_idx;
   NodeId seed;
   // first round
   for (int round = 0; round < k; round++) {
     tt.start();
-    // ---beging winning tree---
-    // seed_idx = select_winning_tree(renew, heap, round);
-    seed = select_winning_tree(renew, heap, round);
-    
+    // ---begin winning tree---
+    // seed = select_winning_tree(renew, heap, round);
     // ---end winning tree---
+
+    // ---begin priority queue---
+    if (round == 0){
+      for (NodeId i = 0; i < G.n; i++) {
+        Q.push(i);
+        heap[i]=0; // use heap as time stamp
+      }
+    }
+    #if defined(EVAL)
+      size_t _num_evals = 0;
+    #endif
+    while ((int)heap[Q.top()] != round){
+      #if defined(EVAL)
+        _num_evals++;
+      #endif
+      const NodeId u = Q.top();
+      Q.pop();
+      influence[u] = compute(u);
+      heap[u] = k; // recently scored
+      Q.push(u);
+    }
+    #if defined(EVAL)
+      cout << "re-evaluate: " << _num_evals << endl;
+      num_evals += _num_evals;
+    #endif
+    seed = Q.top();
+    // ---end priority queue---
 
     // ---begin write max---
     // seed = select_write_max(round);
@@ -416,13 +461,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     //   cout << endl;
     // }
     // --- end greedy ---
-    // auto influence_max = max_element(influence);
-    // auto id = influence_max-influence.begin();
-    // cout << "round " << round <<  " seed " << seed << " influence " << influence[seed] << endl;
-    // cout << "max_influence " << max_influence << endl;
-    // cout << seed << " " << influence[seed] << endl;
-    // assert((id == seed) && "selected seed match with max(influence)");
-    // cout << "max(influence) " << *influence_max << " id " << id << " compute[id] " << compute(id) <<endl;
     float influence_gain = influence[seed] / (R + 0.0);
     seeds[round] = {seed, influence_gain};
     if (round == 0){
@@ -446,5 +484,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     tt.stop();
   }
   cout << "select_seeds time: " << tt.get_total() << endl;
+  #if defined(EVAL)
+    cout << "total re-evaluate times: " << num_evals << endl;
+  #endif
   return seeds;
 }
