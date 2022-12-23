@@ -25,8 +25,10 @@ int main(int argc, char* argv[]){
     Graph graph = read_graph(file);
     AssignUniWeight(graph,w);
     cout << "n: " << graph.n << " m: " << graph.m << " w: " << w << " R: " << R << " k: " << k<< endl;
+    #if defined(MEM)
     cout << "**size of graph is " << sizeof(graph) + (sizeof(NodeId)+sizeof(float))*graph.m \
                               + sizeof(EdgeId)*graph.n << endl;
+    #endif
     if (P.getOption("-compact")) {
       timer tt;
       t_first.reset();

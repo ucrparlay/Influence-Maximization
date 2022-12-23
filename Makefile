@@ -2,6 +2,10 @@ ifdef BREAKDOWN
 BREAK = -DBREAKDOWN
 endif
 
+ifdef MEMORY
+MEMO = -DMEM
+endif
+
 ifdef SPARSE_BREAK
 SP_BREAK = -DSPARSE_BREAK
 endif
@@ -21,7 +25,7 @@ else
 CC = g++
 endif
 
-CPPFLAGS = -std=c++17 -Wall -Wextra -Werror $(INTN) $(INTE) $(BREAK) $(SP_BREAK) -I/home/csgrads/lwang323/include/
+CPPFLAGS = -std=c++17 -Wall -Wextra -Werror $(INTN) $(INTE) $(BREAK) $(SP_BREAK) $(MEMO) -I/home/csgrads/lwang323/include/
 
 ifdef CILKPLUS
 CPPFLAGS += -DPARLAY_CILKPLUS -DCILK -fcilkplus
