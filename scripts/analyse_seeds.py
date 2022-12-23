@@ -11,9 +11,9 @@ IM_DIR = os.path.dirname(os.path.abspath(__file__))
 def analyse_im_seeds(graph, w, folder):
     g = graph.split('/')[-1]
     file_in = f'{IM_DIR}/{folder}/{g[:-4]}.txt'
-    file_out = f'{repo}/{folder}/seeds_{g[:-4]}.txt'
+    file_out = f'{IM_DIR}/{folder}/seeds_{g[:-4]}.txt'
     print(f'anaylyse IM_compact on {file_in}')
-    command = f'{IM_DIR}/general_cascade {graph} {file_in} -w {w} -i 20000'
+    command = f'{IM_DIR}/../general_cascade {graph} {file_in} -w {w} -i 20000'
     subprocess.call(f'numactl -i all {command} >> {file_out}', shell=True)
             
     
@@ -78,13 +78,11 @@ def collect_memory_all(folder, file_name):
     graphs = graph.get_all_graphs()
     for g in graphs:
         g_short = g.split('/')[-1]
-        try:
-            data[g_short]=collect_memory(g, folder)
-        except:
-            continue
+        data[g_short]=collect_memory(g, folder)
     print(data.keys())
-    file_out = f"{folder}/{file_name}.txt"
+    file_out = f"{IM_DIR}/{file_name}.txt"
     with open(file_out, 'a') as f:
+        f.write("Memory Usage\n")
         for g in data.keys():
             lines = []
             lines.append(graph.graphs_map[g])
@@ -106,7 +104,7 @@ def collect_time(graph, folder):
     return (total_time, first_round_time)
 
 def collect_time_all(folder, file_name):
-    fisrt_data = {}
+    first_data = {}
     total_data = {}
     graphs = graph.get_all_graphs()
     for g in graphs:

@@ -57,27 +57,27 @@ graphs_map = {
 }
 
 
-graph_dir = "/home/csgrads/lwang323/data/"
-
+small_graphs_dir = "/data0/lwang323/graph/bin/"
+large_graphs_dir = "/data0/graphs/links/"
 
 def get_small_graphs():
-    return list(map(lambda g: graph_dir + g, small_graphs))
+    return list(map(lambda g: small_graphs_dir + g, small_graphs))
 
 
 def get_large_graphs():
-    return list(map(lambda g: graph_dir + g, large_graphs))
+    return list(map(lambda g: large_graphs_dir + g, large_graphs))
 
 
 def get_grid_graphs():
-    return list(map(lambda g: graph_dir + g, grid_graphs))
+    return list(map(lambda g: large_graphs_dir + g, grid_graphs))
 
 
 def get_knn_graphs():
-    return list(map(lambda g: graph_dir + g, knn_graphs))
+    return list(map(lambda g: large_graphs_dir + g, knn_graphs))
 
 
 def get_all_graphs():
-    return get_small_graphs() + get_large_graphs() + get_grid_graphs() + get_knn_graphs()
+    return get_small_graphs() + get_large_graphs() + get_knn_graphs() + get_grid_graphs() 
 
 
 if __name__ == '__main__':
