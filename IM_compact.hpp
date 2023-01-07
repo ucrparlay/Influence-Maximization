@@ -2,8 +2,8 @@
 
 #include <optional>
 #include <unordered_set>
-// #include <queue>
-// #include <vector>
+#include <queue>
+#include <vector>
 #include "parlay/random.h"
 
 #include "get_time.hpp"
@@ -65,6 +65,7 @@ class CompactInfluenceMaximizer {
   }
   void init_sketches();
   sequence<pair<NodeId, float>> select_seeds(int k);
+  sequence<pair<NodeId, float>> select_seeds_prioQ(int k);
 };
 
 // space: O(n / center_cnt)
@@ -418,33 +419,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     seed = select_winning_tree(renew, heap, round);
     // ---end winning tree---
 
-    // ---begin priority queue---
-    // if (round == 0){
-    //   for (NodeId i = 0; i < G.n; i++) {
-    //     Q.push(i);
-    //     heap[i]=0; // use heap as time stamp
-    //   }
-    // }
-    // #if defined(EVAL)
-    //   size_t _num_evals = 0;
-    // #endif
-    // while ((int)heap[Q.top()] != round){
-    //   #if defined(EVAL)
-    //     _num_evals++;
-    //   #endif
-    //   const NodeId u = Q.top();
-    //   Q.pop();
-    //   influence[u] = compute(u);
-    //   heap[u] = k; // recently scored
-    //   Q.push(u);
-    // }
-    // #if defined(EVAL)
-    //   cout << "re-evaluate: " << _num_evals << endl;
-    //   num_evals += _num_evals;
-    // #endif
-    // seed = Q.top();
-    // ---end priority queue---
-
     // ---begin write max---
     // seed = select_write_max(round);
     // ---end write max---
@@ -482,10 +456,74 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
       }
     });
     tt.stop();
+    #if defined(SCORE)
+      cout << "scores: "<< seeds[round].second << endl;
+    #endif
   }
   cout << "select_seeds time: " << tt.get_total() << endl;
   #if defined(EVAL)
     cout << "total re-evaluate times: " << num_evals << endl;
+  #endif
+  return seeds;
+}
+
+
+sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int K) {
+  sequence<pair<NodeId, float>> seeds(K);
+  auto cmp = [&](size_t left, size_t right) {
+		return (influence[left] < influence[right]); };
+	std::priority_queue<size_t, vector<size_t>, decltype(cmp)> q(cmp);
+  sequence<int> iteration(n);
+	for (size_t i = 0; i < n; i++) {
+		q.push(i);
+    iteration[i]=0;
+	}
+  #if defined(EVAL)
+	size_t total_tries = 0;
+  #endif
+  size_t tries=0;
+  
+  timer tt;
+  tt.start();
+	for (int k = 0; k < K;) {
+		const auto u = q.top();
+		q.pop();
+		if (iteration[u] == k) {
+			float score = influence[u]/(R+0.0);
+      seeds[k]=make_pair(u,score);
+      influence[u] = 0;
+      is_seed[u] = true;
+      parallel_for(0, R, [&](size_t r) {
+        auto center = std::get<0>(get_center(r, u));
+        if (center.has_value()) {
+          auto c = center_id[center.value()];
+          auto p = sketches[r][c];
+          if (!(p & TOP_BIT)) {
+            sketches[r][p] = TOP_BIT | 0;
+          } else {
+            sketches[r][c] = TOP_BIT | 0;
+          }
+        }
+      });
+      #if defined(EVAL)
+        cout << "re-evaluate: " << tries << endl;
+        total_tries+= tries;
+        tries=0;
+      #endif
+      #if defined(SCORE)
+        cout << "scores: "<< seeds[k].second << endl;
+      #endif
+      k++; // commit candidate
+		}else {
+			tries++;
+			influence[u] = compute(u);
+			iteration[u] = k;
+			q.push(u);
+		}
+	}
+  cout << "select_seeds time: " << tt.get_total() << endl;
+  #if defined(EVAL)
+    cout << "total re-evaluate times: " << total_tries << endl;
   #endif
   return seeds;
 }

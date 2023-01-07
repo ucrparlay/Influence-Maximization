@@ -10,6 +10,9 @@ ifdef EVALUE
 EVALUATE = -DEVAL
 endif
 
+ifdef SCORE
+SCORES = -DSCORE
+endif
 
 ifdef SPARSE_BREAK
 SP_BREAK = -DSPARSE_BREAK
@@ -31,7 +34,7 @@ CC = g++
 endif
 
 CPPFLAGS = -std=c++17 -Wall -Wextra -Werror \
-$(INTN) $(INTE) $(BREAK) $(SP_BREAK) $(MEMO) $(EVALUATE) \
+$(INTN) $(INTE) $(BREAK) $(SP_BREAK) $(MEMO) $(EVALUATE) $(SCORES) \
 -I/home/csgrads/lwang323/include/
 
 ifdef CILKPLUS
