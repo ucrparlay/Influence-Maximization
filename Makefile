@@ -33,9 +33,11 @@ else
 CC = g++
 endif
 
-CPPFLAGS = -std=c++17 -Wall -Wextra -Werror \
+# -Wall
+
+CPPFLAGS = -std=c++17  -Wextra -Werror \
 $(INTN) $(INTE) $(BREAK) $(SP_BREAK) $(MEMO) $(EVALUATE) $(SCORES) \
--I/home/csgrads/lwang323/include/
+-I/home/csgrads/lwang323/include/ -I/home/csgrads/lwang323/PAM/include/
 
 ifdef CILKPLUS
 CPPFLAGS += -DPARLAY_CILKPLUS -DCILK -fcilkplus
@@ -59,7 +61,7 @@ endif
 
 COMMON = graph.hpp parseCommandLine.hpp utilities.h get_time.hpp
 
-all: graph IM general_cascade
+all: graph IM general_cascade PAM
 
 	
 graph: graph.cpp $(COMMON)
@@ -67,6 +69,8 @@ graph: graph.cpp $(COMMON)
 
 IM: IM.cpp IM.hpp union_find.hpp IM_compact.hpp PMC.hpp PrunedEstimater.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) IM.cpp -o IM
+CPAM: test_PAM.cpp
+	$(CC) $(CPPFLAGS) test_PAM.cpp -o test_PAM
 
 # connect: connect.h connect.cpp ldd.hpp $(COMMON)
 # 	$(CC) $(CPPFLAGS) connect.cpp -o connect

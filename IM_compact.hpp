@@ -10,6 +10,7 @@
 #include "graph.hpp"
 #include "parlay/sequence.h"
 #include "union_find.hpp"
+#include "pam/pam.h"
 
 // #include "WinnerTree.hpp"
 using namespace std;
@@ -66,6 +67,7 @@ class CompactInfluenceMaximizer {
   void init_sketches();
   sequence<pair<NodeId, float>> select_seeds(int k);
   sequence<pair<NodeId, float>> select_seeds_prioQ(int k);
+  sequence<pair<NodeId, float>> select_seeds_PacTree(int k);
 };
 
 // space: O(n / center_cnt)
@@ -525,5 +527,119 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
   #if defined(EVAL)
     cout << "total re-evaluate times: " << total_tries << endl;
   #endif
+  return seeds;
+}
+
+
+sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PacTree(int K){
+  sequence<pair<NodeId, float>> seeds(K);
+  using key_type = pair<size_t, NodeId>;
+  using value_type = NodeId;
+  using par = pair<key_type, value_type>;
+  struct entry {
+    using key_t = key_type;
+    using val_t = value_type; // not used
+    // decreasing order, so comp becomes >
+    static inline bool comp(key_t a, key_t b) { return (a.first == b.first)? a.second<b.second: a.first>b.first;}
+  }; 
+  using tmap = pam_map<entry>;
+  auto gen_par = [&](NodeId i) -> par { return make_pair(make_pair(influence[i],i),i);};
+  tmap m1;
+  m1 = tmap::multi_insert(m1, delayed_seq<par>((NodeId)n, gen_par));
+  // auto keys_m1 = tmap::keys(m1);
+  // for (int i = 0; i<100; i++){
+  //   cout << keys_m1[i].first << " " << keys_m1[i].second << endl;
+  // }
+  #if defined(DEBUG)
+  cout << "generate m1 from influence[.]" << endl;
+  #endif
+  int n_rounds = parlay::log2_up(n);
+  sequence< NodeId> B(n);
+  for (int k = 0; k<K; k++){
+    #if defined(DEBUG)
+    cout << "k = " << k << endl;
+    #endif
+    int offset = 0;
+    key_type id = std::make_pair<size_t, NodeId>(0, 4294967295);
+    key_type seed = id;
+    for (int round = 0; round<n_rounds ; round++){
+      #if defined(DEBUG)
+      cout << " round " << round << endl;
+      #endif
+      int step = min(1<<round, (int)m1.size());
+      #if defined(DEBUG)
+      cout << "   step " << step << endl;
+      #endif
+      key_type key = (m1.select(step-1).value()).first; // rank starts from 0
+      #if defined(DEBUG)
+      cout << "     select key is " << key.first << ","<<key.second << endl;
+      #endif
+      auto cond = [key] (par t) { return !entry::comp(key, t.first);};
+      tmap res = tmap::filter(m1, cond);
+      #if defined(DEBUG)
+      cout << "   filt res.size " << res.size() << endl;
+      #endif
+      m1 = tmap::map_difference(move(m1), res);
+      #if defined(DEBUG)
+      cout << "   difference m1.size " << m1.size() << endl;
+      #endif
+      sequence<key_type> keys_r = tmap::keys(res);
+      parallel_for(0,keys_r.size(), [&](size_t i){
+        NodeId node =keys_r[i].second;
+        influence[node]=compute(node);
+        B[offset+i]=node;
+        keys_r[i]=make_pair(influence[node], node);
+      });
+      #if defined(DEBUG)
+      cout << "   finish recompute" << endl;
+      #endif
+
+      auto red_f = [&](const key_type& l,
+                      const key_type& r) {
+            return entry::comp(l,r) ? l : r;
+      };
+      // auto id = std::make_pair<size_t, NodeId>(0, 4294967295); // 1<<32-1
+      auto monoid = parlay::make_monoid(red_f, id);
+      auto max_res = parlay::reduce(keys_r, monoid);
+    
+      offset += step;
+      #if defined(DEBUG)
+      cout << "   reduce max_res " << max_res.first << "," << max_res.second << endl;
+      #endif
+      if (seed == id || entry::comp(max_res, seed)){
+        seed = max_res;
+      }
+      #if defined(DEBUG)
+      cout << "   seed is " << seed.second << endl;
+      if (entry::comp(max_res, (m1.select(0).value()).first)){
+        break;
+      }
+      #endif
+      
+    }
+    seeds[k]=make_pair(seed.second, seed.first/(R+0.0));
+    #if defined(SCORE)
+      cout << "scores: "<< seeds[k].second << endl;
+    #endif
+    influence[seed.second] = 0;
+    is_seed[seed.second] = true;
+    parallel_for(0, R, [&](size_t r) {
+      auto center = std::get<0>(get_center(r, seed.second));
+      if (center.has_value()) {
+        auto c = center_id[center.value()];
+        auto p = sketches[r][c];
+        if (!(p & TOP_BIT)) {
+          sketches[r][p] = TOP_BIT | 0;
+        } else {
+          sketches[r][c] = TOP_BIT | 0;
+        }
+      }
+    });
+    #if defined (DEBUG)
+    cout << " offet before insert back " << offset << endl;
+    #endif
+    auto make_par = [&](size_t i) -> par { NodeId node = B[i]; return make_pair(make_pair(influence[node],node),node); };
+    m1 = tmap::multi_insert(m1, delayed_seq<par>(offset, make_par));
+  }
   return seeds;
 }
