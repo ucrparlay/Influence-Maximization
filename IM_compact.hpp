@@ -555,11 +555,14 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PacTree(in
   #endif
   int n_rounds = parlay::log2_up(n);
   sequence< NodeId> B(n);
+  #if defined(EVAL)
+    size_t total_tries = 0;
+  #endif
   for (int k = 0; k<K; k++){
     #if defined(DEBUG)
     cout << "k = " << k << endl;
     #endif
-    int offset = 0;
+    size_t offset_ = 0;
     key_type id = std::make_pair<size_t, NodeId>(0, 4294967295);
     key_type seed = id;
     for (int round = 0; round<n_rounds ; round++){
@@ -587,7 +590,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PacTree(in
       parallel_for(0,keys_r.size(), [&](size_t i){
         NodeId node =keys_r[i].second;
         influence[node]=compute(node);
-        B[offset+i]=node;
+        B[offset_+i]=node;
         keys_r[i]=make_pair(influence[node], node);
       });
       #if defined(DEBUG)
@@ -602,7 +605,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PacTree(in
       auto monoid = parlay::make_monoid(red_f, id);
       auto max_res = parlay::reduce(keys_r, monoid);
     
-      offset += step;
+      offset_ += step;
       #if defined(DEBUG)
       cout << "   reduce max_res " << max_res.first << "," << max_res.second << endl;
       #endif
@@ -611,11 +614,10 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PacTree(in
       }
       #if defined(DEBUG)
       cout << "   seed is " << seed.second << endl;
+      #endif
       if (entry::comp(max_res, (m1.select(0).value()).first)){
         break;
       }
-      #endif
-      
     }
     seeds[k]=make_pair(seed.second, seed.first/(R+0.0));
     #if defined(SCORE)
@@ -636,10 +638,17 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PacTree(in
       }
     });
     #if defined (DEBUG)
-    cout << " offet before insert back " << offset << endl;
+    cout << " offet before insert back " << offset_ << endl;
     #endif
     auto make_par = [&](size_t i) -> par { NodeId node = B[i]; return make_pair(make_pair(influence[node],node),node); };
-    m1 = tmap::multi_insert(m1, delayed_seq<par>(offset, make_par));
+    m1 = tmap::multi_insert(m1, delayed_seq<par>(offset_, make_par));
+    #if defined(EVAL)
+    cout << "re-evaluate: " << offset_ << endl;
+    total_tries+= offset_;
+    #endif
   }
+  #if defined(EVAL)
+    cout << "total re-evaluate times: " << total_tries << endl;
+  #endif
   return seeds;
 }
