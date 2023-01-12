@@ -20,3 +20,4 @@ seeds_*
 ./Makefile
 scripts/*
 !scripts/*.py
+test_PAM

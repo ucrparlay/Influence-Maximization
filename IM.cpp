@@ -39,8 +39,8 @@ int main(int argc, char* argv[]){
       sequence<pair<NodeId, float>> seeds;
       if (P.getOption("-Q")){
         seeds = compact_IM_solver.select_seeds_prioQ(k);
-      }else if (P.getOption("-PacT")){
-        seeds = compact_IM_solver.select_seeds_PacTree(k);
+      }else if (P.getOption("-PAM")){
+        seeds = compact_IM_solver.select_seeds_PAM(k);
       }else{
         seeds = compact_IM_solver.select_seeds(k);
       }

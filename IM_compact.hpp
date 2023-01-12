@@ -67,7 +67,7 @@ class CompactInfluenceMaximizer {
   void init_sketches();
   sequence<pair<NodeId, float>> select_seeds(int k);
   sequence<pair<NodeId, float>> select_seeds_prioQ(int k);
-  sequence<pair<NodeId, float>> select_seeds_PacTree(int k);
+  sequence<pair<NodeId, float>> select_seeds_PAM(int k);
 };
 
 // space: O(n / center_cnt)
@@ -531,7 +531,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
 }
 
 
-sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PacTree(int K){
+sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K){
   sequence<pair<NodeId, float>> seeds(K);
   using key_type = pair<size_t, NodeId>;
   using value_type = NodeId;
@@ -546,10 +546,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PacTree(in
   auto gen_par = [&](NodeId i) -> par { return make_pair(make_pair(influence[i],i),i);};
   tmap m1;
   m1 = tmap::multi_insert(m1, delayed_seq<par>((NodeId)n, gen_par));
-  // auto keys_m1 = tmap::keys(m1);
-  // for (int i = 0; i<100; i++){
-  //   cout << keys_m1[i].first << " " << keys_m1[i].second << endl;
-  // }
   #if defined(DEBUG)
   cout << "generate m1 from influence[.]" << endl;
   #endif
@@ -569,23 +565,27 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PacTree(in
       #if defined(DEBUG)
       cout << " round " << round << endl;
       #endif
-      int step = min(1<<round, (int)m1.size());
+      int step = min(1<<round, (int)m1.size()-1);   // take care when step = m1.size()
       #if defined(DEBUG)
       cout << "   step " << step << endl;
       #endif
-      key_type key = (m1.select(step-1).value()).first; // rank starts from 0
+      par key_entry = m1.select(step).value(); // rank starts from 0
+      key_type key = key_entry.first;
       #if defined(DEBUG)
       cout << "     select key is " << key.first << ","<<key.second << endl;
       #endif
-      auto cond = [key] (par t) { return !entry::comp(key, t.first);};
-      tmap res = tmap::filter(m1, cond);
+      auto bsts = tmap::Tree::split(m1.root, key);
       #if defined(DEBUG)
-      cout << "   filt res.size " << res.size() << endl;
+      cout << "     split m1" << endl;
       #endif
-      m1 = tmap::map_difference(move(m1), res);
+      tmap res(bsts.first);
+      tmap rem(bsts.second);
+      m1 = tmap::insert(rem, key_entry);
       #if defined(DEBUG)
-      cout << "   difference m1.size " << m1.size() << endl;
+      cout << "     res size " << res.size() << endl;
+      cout << "     m1 size " << m1.size() << endl;
       #endif
+
       sequence<key_type> keys_r = tmap::keys(res);
       parallel_for(0,keys_r.size(), [&](size_t i){
         NodeId node =keys_r[i].second;
