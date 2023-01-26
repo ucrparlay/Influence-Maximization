@@ -471,13 +471,14 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
 
 
 sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int K) {
+  using key_val = pair<size_t, NodeId>;
   sequence<pair<NodeId, float>> seeds(K);
-  auto cmp = [&](size_t left, size_t right) {
-		return (influence[left] < influence[right]); };
-	std::priority_queue<size_t, vector<size_t>, decltype(cmp)> q(cmp);
+  auto cmp = [&](key_val left, key_val right) {
+		return (left.first < right.first) || (left.first==right.first && left.second > right.second); };
+	std::priority_queue<key_val, vector<key_val>, decltype(cmp)> q(cmp);
   sequence<int> iteration(n);
 	for (size_t i = 0; i < n; i++) {
-		q.push(i);
+		q.push(make_pair(influence[i], i));
     iteration[i]=0;
 	}
   #if defined(EVAL)
@@ -488,7 +489,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
   timer tt;
   tt.start();
 	for (int k = 0; k < K;) {
-		const auto u = q.top();
+		const auto node = q.top();
+    NodeId u = node.second;
 		q.pop();
 		if (iteration[u] == k) {
 			float score = influence[u]/(R+0.0);
@@ -510,17 +512,17 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
       #if defined(EVAL)
         cout << "re-evaluate: " << tries << endl;
         total_tries+= tries;
-        tries=0;
       #endif
       #if defined(SCORE)
         cout << "scores: "<< seeds[k].second << endl;
       #endif
       k++; // commit candidate
+      tries =0;
 		}else {
 			tries++;
 			influence[u] = compute(u);
 			iteration[u] = k;
-			q.push(u);
+			q.push(make_pair(influence[u], u));
 		}
 	}
   cout << "select_seeds time: " << tt.get_total() << endl;
@@ -557,7 +559,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
   tmap::node* res;
   tmap::node* rem;
   rem = m1.root;
-  size_t remain_size = n;
+  // size_t remain_size = n;
   for (int k = 0; k<K; k++){
     #if defined(DEBUG)
     cout << "k = " << k << endl;
@@ -571,13 +573,12 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
       #if defined(DEBUG)
       cout << " round " << round << endl;
       cout << " tree size is " << tmap::Tree::size(rem) << endl;
-      cout << " remain_size  " << remain_size << endl;
       #endif
-      if ((size_t)1<<round >= remain_size){
-        res = m1.root;
+      if ((size_t)1<<round >= tmap::Tree::size(rem)){
+        step = tmap::Tree::size(rem);
+        res = rem;
         rem = NULL;
         key= id;
-        step = remain_size;
         #if defined(DEBUG)
           cout << "   step " << step << endl;
         #endif
@@ -628,11 +629,11 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
         seed = max_res;
       }
       offset_ += step;
-      remain_size -= step;
       #if defined(DEBUG)
       cout << "   seed is " << seed.second << endl;
       #endif
       if (key == id){
+        printf("Error, find k is id\n");
         break;
       }
       auto replace = [] (const tmap::V& a, const tmap::V& b) {return b;}; 
@@ -670,7 +671,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
     cout << " multi insert sequence size " << A.size() << endl;
     #endif
     rem = tmap::Tree::multi_insert_sorted(rem, A.data(), A.size(), replace);
-    remain_size += offset_;
     #if defined(EVAL)
     cout << "re-evaluate: " << offset_ << endl;
     total_tries+= offset_;
