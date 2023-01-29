@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
   GeneralCascade gc(bfs_solver);
   auto seeds = ReadSeeds(seeds_file);
   // sequence<int> K = {50,100,150,200};
-  timer evalute_time;
+  im::timer evalute_time;
   // for (auto k: K){
   // int k = 100;
   // int k = 53;
