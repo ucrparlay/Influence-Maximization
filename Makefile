@@ -37,7 +37,7 @@ endif
 
 CPPFLAGS = -std=c++17  -Wextra -Werror \
 $(INTN) $(INTE) $(BREAK) $(SP_BREAK) $(MEMO) $(EVALUATE) $(SCORES) \
--I/home/csgrads/lwang323/include/ -I/home/csgrads/lwang323/PAM/include/
+-I/home/lwang323/PAM/include/ # -I/home/csgrads/lwang323/include/
 
 ifdef CILKPLUS
 CPPFLAGS += -DPARLAY_CILKPLUS -DCILK -fcilkplus

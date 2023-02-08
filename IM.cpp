@@ -13,8 +13,8 @@ int main(int argc, char* argv[]){
         abort();
     }
     char* file = argv[1];
-    size_t k = P.getOptionInt("-k", 200);
-    size_t R = P.getOptionInt("-R", 200);
+    size_t k = P.getOptionInt("-k", 100);
+    size_t R = P.getOptionInt("-R", 256);
     float w = P.getOptionDouble("-w", 0.02);
     // int option = P.getOptionInt("-option", 2);
     // bool CELF = P.getOption("-celf");
@@ -48,40 +48,24 @@ int main(int argc, char* argv[]){
       cout << "seeds: ";
       for (auto t: seeds) cout << t.first << ' ';
       cout << endl;
-      return 0;
-    // }else if (P.getOption("-pmc")){
-    //   timer t_pmc;
-    //   t_pmc.start();
-    //   DirectedInfluenceMaximizer pmc_solver(graph, R);
-    //   pmc_solver.init_sketches_phases();
-    //   // pmc_solver.init_sketches();
-    //   cout << "init sketch time: " << t_pmc.stop() << endl; 
-    //   timer t_select; t_select.start();
-    //   auto seeds_spread = pmc_solver.select_seeds(k);
-    //   cout << "select time: " << t_select.stop()  << endl;
-      // for (auto x: seeds_spread) {
-      //   // cout << x.first << " " << x.second << endl;
-      //   cout << x.first << " ";
-      // }
-      // cout << endl;
-    // }else{
-    //   InfluenceMaximizer IM_solver(graph);
-    //   timer t_init;
-    //   float cost;
-    //   t_init.start();
-    //   IM_solver.init_sketches(R, option);
-    //   cost = t_init.stop();
-    //   cout << "parallel{edges} init_sketches: " << cost<< endl;
-      
-    //   timer t_select;
-    //   auto seeds_spread = IM_solver.select_seeds(k, R, CELF);
-    //   cost = t_select.stop();
-    //   cout << "select time: " << cost  << endl;
-    //   cout << "seeds: ";
-    //   for (auto x: seeds_spread) {
-    //     cout << x.first << " ";
-    //   }
-    //   cout << endl;
     }
+    // else{
+    //   InfluenceMaximizer IM_solver(graph, R);
+    //   timer t;
+    //   float cost;
+    //   t.start();
+    //   IM_solver.init_sketches(R);
+    //   cost = t.stop();
+    //   cout << "sketching time: " << cost<< endl;
+      
+    //   t.start();
+    //   auto seeds_spread = IM_solver.select_seeds(k);
+    //   cost = t.stop();
+    //   cout << "select time: " << cost  << endl;
+    //   cout << "total time: " << t.get_total() << endl;
+    //   cout << "seeds: ";
+    //   for (auto x: seeds_spread) cout << x.first << " ";
+    //   cout << endl;
+    // }
     return 0;
 }

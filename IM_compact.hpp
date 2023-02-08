@@ -36,6 +36,7 @@ class CompactInfluenceMaximizer {
   sequence<size_t> influence;
   tuple<optional<NodeId>, bool, size_t> get_center(size_t graph_id, NodeId x);
   size_t compute(NodeId i);
+  size_t compute_pal(NodeId i);
   void construct(sequence<NodeId>& heap, NodeId start, NodeId end, NodeId& root);
   NodeId select_winning_tree(sequence<bool>& renew,sequence<NodeId>& heap, int round);
   NodeId select_write_max(int round);
@@ -250,6 +251,25 @@ size_t CompactInfluenceMaximizer::compute(NodeId i){
     }
   }
   return new_influence;
+}
+size_t CompactInfluenceMaximizer::compute_pal(NodeId i){
+  sequence<size_t> new_influence(R);
+  parallel_for (0, R, [&](size_t r){
+    auto [center, meet_seed, num] = get_center(r, i);
+    if (center.has_value()) {
+      auto c = center_id[center.value()];
+      auto p = sketches[r][c];
+      if (!(p & TOP_BIT)) {
+        p = sketches[r][p];
+      }
+      new_influence[r] = p & VAL_MASK;
+    } else {
+      if (!meet_seed) {
+        new_influence[r] = num;
+      }
+    }
+  });
+  return parlay::reduce(new_influence);
 }
 
 void CompactInfluenceMaximizer::construct(sequence<NodeId>& tree, 
@@ -481,9 +501,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
 		q.push(make_pair(influence[i], i));
     iteration[i]=0;
 	}
-  #if defined(EVAL)
+  // #if defined(EVAL)
 	size_t total_tries = 0;
-  #endif
+  // #endif
   size_t tries=0;
   
   timer tt;
@@ -511,8 +531,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
       });
       #if defined(EVAL)
         cout << "re-evaluate: " << tries << endl;
-        total_tries+= tries;
       #endif
+      total_tries+= tries;
       #if defined(SCORE)
         cout << "scores: "<< seeds[k].second << endl;
       #endif
@@ -520,15 +540,15 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
       tries =0;
 		}else {
 			tries++;
-			influence[u] = compute(u);
+			influence[u] = compute_pal(u);
 			iteration[u] = k;
 			q.push(make_pair(influence[u], u));
 		}
 	}
   cout << "select_seeds time: " << tt.get_total() << endl;
-  #if defined(EVAL)
-    cout << "total re-evaluate times: " << total_tries << endl;
-  #endif
+  // #if defined(EVAL)
+  cout << "total re-evaluate times: " << total_tries << endl;
+  // #endif
   return seeds;
 }
 
@@ -553,9 +573,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
   #endif
   int n_rounds = parlay::log2_up(n);
   sequence< NodeId> B(n);
-  #if defined(EVAL)
-    size_t total_tries = 0;
-  #endif
+  // #if defined(EVAL)
+  size_t total_tries = 0;
+  // #endif
   tmap::node* res;
   tmap::node* rem;
   rem = m1.root;
@@ -599,10 +619,17 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
       #endif
       res = bsts.first;
       rem = bsts.second;
+      max_influence = 0;
       auto re_compute = [&](tmap::E& e, size_t i) {
         NodeId node = e.second;
-        influence[node]=compute(node);
-        B[offset_+i]=node;
+        if (influence[node] >= max_influence){
+          influence[node]=compute(node);
+          B[offset_+i]=node;
+          if (influence[node]> max_influence){
+            write_max(&max_influence, influence[node], 
+                  [&](size_t a, size_t b){return a < b;});
+          }
+        }
       };
       size_t granularity = utils::node_limit;
       tmap::Tree::foreach_index(res, 0, re_compute, granularity, true);
@@ -632,6 +659,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
         NodeId node = key.second;
         influence[node]=compute(node);
         B[offset_]=node;
+        offset_++;
         key_type new_key = make_pair(influence[node], node);
         if (entry::comp(new_key,seed)){
           seed = new_key;
@@ -676,13 +704,13 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
     rem = tmap::Tree::multi_insert_sorted(rem, A.data(), A.size(), replace);
     #if defined(EVAL)
     cout << "re-evaluate: " << offset_ << endl;
-    total_tries+= offset_;
     #endif
+    total_tries+= offset_;
     tt.stop();
   }
   cout << "select_seeds time: " << tt.get_total() << endl;
-  #if defined(EVAL)
-    cout << "total re-evaluate times: " << total_tries << endl;
-  #endif
+  // #if defined(EVAL)
+  cout << "total re-evaluate times: " << total_tries << endl;
+  // #endif
   return seeds;
 }
