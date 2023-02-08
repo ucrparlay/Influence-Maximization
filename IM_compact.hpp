@@ -25,7 +25,7 @@ size_t num_evals;
 int thresh;
 class CompactInfluenceMaximizer {
  private:
-  size_t n, R, center_cnt, max_influence;
+  size_t n, R, center_cnt, max_influence, queue_size;
   Graph& G;
   float compact_rate;
   sequence<Hash_Edge> hash_edges;
@@ -34,7 +34,7 @@ class CompactInfluenceMaximizer {
   sequence<sequence<NodeId>> sketches;
   // sequence<NodeId> permute;
   sequence<size_t> influence;
-  tuple<optional<NodeId>, bool, size_t> get_center(size_t graph_id, NodeId x);
+  tuple<optional<NodeId>, bool, size_t> get_center(size_t graph_id, NodeId x, NodeId * Q);
   size_t compute(NodeId i);
   size_t compute_pal(NodeId i);
   void construct(sequence<NodeId>& heap, NodeId start, NodeId end, NodeId& root);
@@ -49,6 +49,8 @@ class CompactInfluenceMaximizer {
       : R(R), G(graph), compact_rate(compact_rate) {
     assert(G.symmetric);
     n = G.n;
+    queue_size = ceil(1.0/compact_rate)*parlay::log2_up((size_t)n);
+    printf("queue size is %ld\n", queue_size);
     hash_edges = sequence<Hash_Edge>(R);
     parallel_for(0, R, [&](size_t r) {
       hash_edges[r].hash_graph_id = _hash((EdgeId)r);
@@ -73,25 +75,38 @@ class CompactInfluenceMaximizer {
 
 // space: O(n / center_cnt)
 tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
-    size_t graph_id, NodeId x) {
+    size_t graph_id, NodeId x, NodeId* Q) {
   optional<NodeId> center = {};
   if (is_center[x]) {
     return {x, false, 1};
   }
   bool meet_seed = is_seed[x];
-  vector<NodeId> que = {x};
-  unordered_set<NodeId> visit;
-  visit.insert(x);
+  // vector<NodeId> que = {x};
+  // unordered_set<NodeId> visit;
+  size_t head = 0, tail=0;
+  auto visit = [&](NodeId u){
+    for (size_t i = 0; i< head; i++){
+      if (Q[i]==u){
+        return true;
+      }
+    }
+    return false;
+  };
+  // visit.insert(x);
+  Q[head++]=x;
   const auto& hash_edge = hash_edges[graph_id];
-  for (size_t i = 0; i < que.size(); i++) {
+  for (size_t i = tail; i < head; i++) {
     if (center.has_value()) break;
-    auto u = que[i];
+    auto u = Q[i];
     for (auto j = G.offset[u]; j < G.offset[u + 1]; j++) {
       auto v = G.E[j];
       if ((u < v ? hash_edge(u, v, G.W[j]) : hash_edge(v, u, G.W[j])) &&
-          visit.find(v) == visit.end()) {
-        que.push_back(v);
-        visit.insert(v);
+          !visit(v)) {
+        Q[head++]=v;
+        if (head > queue_size){
+          printf("Error, local queue full, queue size is %d\n", queue_size);
+          break;
+        }
         if (is_seed[v]) {
           meet_seed = true;
         }
@@ -102,7 +117,7 @@ tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
       }
     }
   }
-  return {center, meet_seed, visit.size()};
+  return {center, meet_seed, head};
 }
 
 void CompactInfluenceMaximizer::init_sketches() {
@@ -236,7 +251,8 @@ void CompactInfluenceMaximizer::init_sketches() {
 size_t CompactInfluenceMaximizer::compute(NodeId i){
   size_t new_influence = 0;
   for (size_t r = 0; r < R; r++) {
-    auto [center, meet_seed, num] = get_center(r, i);
+    NodeId Q[queue_size];
+    auto [center, meet_seed, num] = get_center(r, i, Q);
     if (center.has_value()) {
       auto c = center_id[center.value()];
       auto p = sketches[r][c];
@@ -255,7 +271,8 @@ size_t CompactInfluenceMaximizer::compute(NodeId i){
 size_t CompactInfluenceMaximizer::compute_pal(NodeId i){
   sequence<size_t> new_influence(R);
   parallel_for (0, R, [&](size_t r){
-    auto [center, meet_seed, num] = get_center(r, i);
+    NodeId Q[queue_size];
+    auto [center, meet_seed, num] = get_center(r, i, Q);
     if (center.has_value()) {
       auto c = center_id[center.value()];
       auto p = sketches[r][c];
@@ -325,7 +342,7 @@ void CompactInfluenceMaximizer::extract(
     if (influence[start] >= max_influence){
       if (!renew[start]){
         // influence[start] = compute(permute[start]);
-        influence[start] = compute(start);
+        influence[start] = compute_pal(start);
         renew[start] = true;
         if (influence[start] > max_influence){
           write_max(&max_influence, influence[start], 
@@ -344,7 +361,7 @@ void CompactInfluenceMaximizer::extract(
   if (influence[_root] >= max_influence){
     // in this case, renew[root] must be false
     // influence[_root] = compute(permute[_root]);
-    influence[_root] = compute(_root);
+    influence[_root] = compute_pal(_root);
     renew[_root] = true;
     if (influence[_root] > max_influence){
     write_max(&max_influence, influence[_root], 
@@ -389,7 +406,7 @@ NodeId CompactInfluenceMaximizer::select_write_max(int round){
     parallel_for(0,n,[&](size_t i){
       if (influence[i] >= max_influence){
         // influence[i]=compute(permute[i]);
-        influence[i] = compute(i);
+        influence[i] = compute_pal(i);
         if (influence[i]>max_influence){
           write_max(&max_influence, influence[i], 
           [&](size_t a, size_t b){return a < b;});
@@ -407,7 +424,7 @@ NodeId CompactInfluenceMaximizer::select_greedy(int round){
   if (round >0){
     parallel_for(0, n, [&](size_t i){
       // influence[i]=compute(permute[i]);
-      influence[i]=compute(i);
+      influence[i]=compute_pal(i);
     });
   }
   seed = max_element(influence)-influence.begin();
@@ -466,7 +483,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     is_seed[seed] = true;
     renew[seed] = true;
     parallel_for(0, R, [&](size_t r) {
-      auto center = std::get<0>(get_center(r, seed));
+      NodeId Q[queue_size];
+      auto center = std::get<0>(get_center(r, seed, Q));
       if (center.has_value()) {
         auto c = center_id[center.value()];
         auto p = sketches[r][c];
@@ -518,7 +536,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
       influence[u] = 0;
       is_seed[u] = true;
       parallel_for(0, R, [&](size_t r) {
-        auto center = std::get<0>(get_center(r, u));
+        NodeId Q[queue_size];
+        auto center = std::get<0>(get_center(r, u, Q));
         if (center.has_value()) {
           auto c = center_id[center.value()];
           auto p = sketches[r][c];
@@ -546,9 +565,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
 		}
 	}
   cout << "select_seeds time: " << tt.get_total() << endl;
-  // #if defined(EVAL)
+  #if defined(EVAL)
   cout << "total re-evaluate times: " << total_tries << endl;
-  // #endif
+  #endif
   return seeds;
 }
 
@@ -625,7 +644,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
       auto re_compute = [&](tmap::E& e, size_t i) {
         NodeId node = e.second;
         if (influence[node] >= max_influence){
-          influence[node]=compute(node);
+          influence[node]=compute_pal(node);
           #if defined(EVAL)
             B_flag[offset_+i]=true;
           #endif
@@ -666,7 +685,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
       #endif
       if (tmap::Tree::size(rem) == 0){
         NodeId node = key.second;
-        influence[node]=compute(node);
+        influence[node]=compute_pal(node);
         B[offset_]=node;
         #if defined(EVAL)
           B[offset_]=true;
@@ -692,7 +711,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
     influence[seed.second] = 0;
     is_seed[seed.second] = true;
     parallel_for(0, R, [&](size_t r) {
-      auto center = std::get<0>(get_center(r, seed.second));
+      NodeId Q[queue_size];
+      auto center = std::get<0>(get_center(r, seed.second, Q));
       if (center.has_value()) {
         auto c = center_id[center.value()];
         auto p = sketches[r][c];
@@ -723,8 +743,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
     tt.stop();
   }
   cout << "select_seeds time: " << tt.get_total() << endl;
-  // #if defined(EVAL)
+  #if defined(EVAL)
   cout << "total re-evaluate times: " << total_tries << endl;
-  // #endif
+  #endif
   return seeds;
 }
