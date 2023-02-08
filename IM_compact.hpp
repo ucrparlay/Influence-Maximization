@@ -573,9 +573,11 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
   #endif
   int n_rounds = parlay::log2_up(n);
   sequence< NodeId> B(n);
-  // #if defined(EVAL)
+  #if defined(EVAL)
+  sequence<bool> B_flag(n);
+  #endif
   size_t total_tries = 0;
-  // #endif
+  
   tmap::node* res;
   tmap::node* rem;
   rem = m1.root;
@@ -624,12 +626,19 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
         NodeId node = e.second;
         if (influence[node] >= max_influence){
           influence[node]=compute(node);
-          B[offset_+i]=node;
+          #if defined(EVAL)
+            B_flag[offset_+i]=true;
+          #endif
           if (influence[node]> max_influence){
             write_max(&max_influence, influence[node], 
                   [&](size_t a, size_t b){return a < b;});
           }
+        }else{
+          #if defined(EVAL)
+            B_flag[offset_+i]=false;
+          #endif
         }
+        B[offset_+i]=node;
       };
       size_t granularity = utils::node_limit;
       tmap::Tree::foreach_index(res, 0, re_compute, granularity, true);
@@ -659,6 +668,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
         NodeId node = key.second;
         influence[node]=compute(node);
         B[offset_]=node;
+        #if defined(EVAL)
+          B[offset_]=true;
+        #endif
         offset_++;
         key_type new_key = make_pair(influence[node], node);
         if (entry::comp(new_key,seed)){
@@ -703,9 +715,11 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
     #endif
     rem = tmap::Tree::multi_insert_sorted(rem, A.data(), A.size(), replace);
     #if defined(EVAL)
-    cout << "re-evaluate: " << offset_ << endl;
+    size_t re_evals = count(B_flag.cut(0, offset_), true);
+    cout << "re-evaluate: " << re_evals << endl;
+    total_tries+= re_evals;
     #endif
-    total_tries+= offset_;
+    
     tt.stop();
   }
   cout << "select_seeds time: " << tt.get_total() << endl;
