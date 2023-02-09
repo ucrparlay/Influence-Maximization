@@ -49,6 +49,9 @@ class CompactInfluenceMaximizer {
       : R(R), G(graph), compact_rate(compact_rate) {
     assert(G.symmetric);
     n = G.n;
+    // search path length within (1/compact_rate)*log n w.h.p
+    // where n should be the largest CC size, but here for simplicity, use |V|
+    // if the memory usage is dramatically increase, set it to a tighter bound
     queue_size = ceil(1.0/compact_rate)*parlay::log2_up((size_t)n);
     printf("queue size is %ld\n", queue_size);
     hash_edges = sequence<Hash_Edge>(R);
@@ -640,6 +643,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
       #endif
       res = bsts.first;
       rem = bsts.second;
+      // initial max_influence as 0 or seed's, the results are the same.
+      // Because all the old influences in this batch is greater than seed's.
       max_influence = 0;
       auto re_compute = [&](tmap::E& e, size_t i) {
         NodeId node = e.second;
