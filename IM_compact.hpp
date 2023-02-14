@@ -664,7 +664,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
         }
         B[offset_+i]=node;
       };
-      size_t granularity = utils::node_limit;
+      // size_t granularity = utils::node_limit;
+      size_t granularity = 10;
       tmap::Tree::foreach_index(res, 0, re_compute, granularity, true);
       #if defined(DEBUG)
       cout << "   finish recompute" << endl;
