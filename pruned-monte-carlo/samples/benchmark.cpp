@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  timer tm;
+  im::timer tm;
 	InfluenceMaximizer im;
 	vector<int> seeds = im.run(es, k, R);
   cout << "total time: " << tm.stop() << endl;

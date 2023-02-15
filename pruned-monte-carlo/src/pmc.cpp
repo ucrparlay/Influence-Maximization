@@ -8,7 +8,7 @@
 #include "../../get_time.hpp"
 
 using namespace std;
-timer t_first;
+im::timer t_first;
 
 inline int PrunedEstimater::unique_child(const int v) {
 	int outdeg = 0, child = -1;
@@ -301,7 +301,7 @@ vector<int> InfluenceMaximizer::run(vector<pair<pair<int, int>, double> > &es,
 	vector<PrunedEstimater> infs(R);
 	vector<int> seeds;
 
-  timer init_timer;
+  im::timer init_timer;
 	for (int t = 0; t < R; t++) {
 		Xorshift xs = Xorshift(t);
 
@@ -348,9 +348,9 @@ vector<int> InfluenceMaximizer::run(vector<pair<pair<int, int>, double> > &es,
 		infs[t].init(nscc, es2, comp);
 	}
 	cout << "first time: " << t_first.get_total() << endl;
-  	cout << "init time: " << init_timer.stop() << endl;
+  cout << "init time: " << init_timer.stop() << endl;
   
-  	timer seed_timer;
+  im::timer seed_timer;
 	vector<long long> gain(n);
 	vector<int> S;
 
