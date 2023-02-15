@@ -633,7 +633,7 @@ struct Hash_Edge {
     // NodeId id_term;
     // bool forward;
     bool operator()(NodeId u, NodeId v, float w) const {
-      return (hash_graph_id ^ _hash(((EdgeId)min(u,v)<< 32) + max(u,v))) < UINT_E_MAX*w;
+      return _hash(hash_graph_id ^ _hash(((EdgeId)min(u,v)<< 32) + max(u,v))) < UINT_E_MAX*w;
       // if (!forward) swap(u,v);
       // return _hash(_hash(u)+v)+_hash(graph_id) < w*UINT_N_MAX;
       // return _hash( graph_id*n*n + u*n + v) < w*UINT_N_MAX;
