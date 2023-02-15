@@ -7,14 +7,15 @@
 #include "../src/pmc.hpp"
 #include "../../get_time.hpp"
 #include "../../graph.hpp"
+#include "parlay/sequence.h"
 
 using namespace std;
 
-// ./benchmark /data/lwang323/graph/bin/Youtube_sym.bin 200 200
+// ./pmc /data/lwang323/graph/bin/Youtube_sym.bin 200 200
 
 int main(int argc, char **argv) {
 	if (argc < 5) {
-		cerr << "./benchmark graph k R w" << endl;
+		cerr << "./pmc graph k R w" << endl;
 		exit(1);
 	}
 
@@ -41,16 +42,6 @@ int main(int argc, char **argv) {
       es.push_back(make_pair(make_pair(u, v), p));
     }
   }
-
-  int ans = 0;
-  for (int i = 0; i < 10000; i++) {
-    for (int j = 0; j < 10000; j++) {
-      for (int k = 0; k < 2000; k++) {
-        ans += i ^ j ^ k;
-      }
-    }
-  }
-  cout << ans << endl;
 
   im::timer tm;
 	InfluenceMaximizer im;
