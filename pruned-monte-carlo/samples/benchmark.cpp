@@ -13,8 +13,8 @@ using namespace std;
 // ./benchmark /data/lwang323/graph/bin/Youtube_sym.bin 200 200
 
 int main(int argc, char **argv) {
-	if (argc < 4) {
-		cerr << "./pmc graph k R" << endl;
+	if (argc < 5) {
+		cerr << "./benchmark graph k R w" << endl;
 		exit(1);
 	}
 
@@ -23,8 +23,10 @@ int main(int argc, char **argv) {
 
 	int k = atoi(argv[2]);
 	int R = atoi(argv[3]);
+  double w = atof(argv[4]);
   cout << "k = " << k << endl;
   cout << "R = " << R << endl;
+  cout << "w = " << w << endl;
   cout << "n = " << graph.n << endl;
   cout << "m = " << graph.m << endl;
 
@@ -35,17 +37,27 @@ int main(int argc, char **argv) {
     for (unsigned int j = graph.offset[i]; j < graph.offset[i + 1]; j++) {
       u = i;
       v = graph.E[j];
-      p = 1.0 / (graph.in_offset[v + 1] - graph.in_offset[v]);
+      p = w;
       es.push_back(make_pair(make_pair(u, v), p));
     }
   }
+
+  int ans = 0;
+  for (int i = 0; i < 10000; i++) {
+    for (int j = 0; j < 10000; j++) {
+      for (int k = 0; k < 2000; k++) {
+        ans += i ^ j ^ k;
+      }
+    }
+  }
+  cout << ans << endl;
 
   im::timer tm;
 	InfluenceMaximizer im;
 	vector<int> seeds = im.run(es, k, R);
   cout << "total time: " << tm.stop() << endl;
 
-  cout << "seeds:\n";
+  cout << "seeds: ";
 	for (int i = 0; i < k; i++) {
 		cout << seeds[i] << " \n"[i == k - 1];
 	}
