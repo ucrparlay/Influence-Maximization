@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
     evalute_time.start();
     auto res = gc.Run(seed_i.subseq(0,k), num_iter);
     cout << "time: " << evalute_time.stop() << endl;
-    cout << res << endl;
+    printf("%.5lf\n", res);
   }
   // }
 
