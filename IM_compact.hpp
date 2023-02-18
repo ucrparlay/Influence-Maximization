@@ -52,7 +52,7 @@ class CompactInfluenceMaximizer {
     // search path length within (1/compact_rate)*log n w.h.p
     // where n should be the largest CC size, but here for simplicity, use |V|
     // if the memory usage is dramatically increase, set it to a tighter bound
-    queue_size = ceil(1.0/compact_rate)*parlay::log2_up((size_t)n);
+    queue_size = 2*ceil(1.0/compact_rate)*parlay::log2_up((size_t)n);
     printf("queue size is %ld\n", queue_size);
     hash_edges = sequence<Hash_Edge>(R);
     parallel_for(0, R, [&](size_t r) {
@@ -135,7 +135,7 @@ void CompactInfluenceMaximizer::init_sketches() {
 
   sketches = sequence(R, sequence<NodeId>(center_cnt));
   #if defined(MEM)
-  cout << "**size of sketches is " << (sizeof(NodeId)*center_cnt)*R << endl;
+  // cout << "**size of sketches is " << (sizeof(NodeId)*center_cnt)*R << endl;
   #endif
   auto find = gbbs::find_variants::find_compress;
   auto splice = gbbs::splice_variants::split_atomic_one;
@@ -145,17 +145,20 @@ void CompactInfluenceMaximizer::init_sketches() {
   sequence<NodeId> label(n);
   sequence<pair<NodeId, NodeId>> belong(n);
   #if defined(MEM)
-  cout << "--size of label is " << sizeof(NodeId)*n << endl;
-  cout << "--size of belong is " << sizeof(pair<NodeId,NodeId>)*n << endl;
+  // cout << "--size of label is " << sizeof(NodeId)*n << endl;
+  // cout << "--size of belong is " << sizeof(pair<NodeId,NodeId>)*n << endl;
   #endif
   timer t_union_find;
   timer t_sketch;
   timer t_sort;
+  timer t_write_sketch;
   // bool v3_v31 = true;
   #if defined(MEM)
-  cout << "--size of offset is " << sizeof(NodeId)*n << endl;
+  // cout << "--size of offset is " << sizeof(NodeId)*n << endl;
   #endif
   uint max_n_cc=0;
+  cout << "initial sketching time: " << tt.stop() << endl;
+  tt.start();
   for (size_t r = 0; r < R; r++) {
     // cout << "r = " << r << endl;
     t_union_find.start();
@@ -216,7 +219,9 @@ void CompactInfluenceMaximizer::init_sketches() {
         }
       }
     });
+    t_sketch.stop();
     cc_offset[n_cc]= n;
+    t_write_sketch.start();
     parallel_for(0, n, [&](size_t i){
       NodeId i_idx = offset[i];
       assert(i_idx < n_cc);
@@ -234,21 +239,17 @@ void CompactInfluenceMaximizer::init_sketches() {
         }
       }
     });
-    t_sketch.stop();
+    t_write_sketch.stop();
   }
-  // parallel_for(0, n, [&](size_t i){
-  //   NodeId v = permute[i];
-  //   influence[i]=_influence[v];
-  // });
   #if defined(MEM)
-  cout << "--size of center_root is " << sizeof(NodeId)*max_n_cc << endl;
-  cout << "--size of cc_offset is " << sizeof(NodeId)*(max_n_cc+1) << endl;
+  // cout << "--size of center_root is " << sizeof(NodeId)*max_n_cc << endl;
+  // cout << "--size of cc_offset is " << sizeof(NodeId)*(max_n_cc+1) << endl;
   cout << "init_sketches time: " << tt.stop() << endl;
   cout << "union time time: " << t_union_find.get_total() << endl;
   cout << "sort time: " << t_sort.get_total() << endl;
-  cout << "sketch time: " << t_sketch.get_total() << endl;
+  cout << "compute sketch time: " << t_sketch.get_total() << endl;
+  cout << "write sketch time: " << t_write_sketch.get_total() << endl;
   #endif
-  // cout << "vertex 3 is equal to vertex 31: " << v3_v31 << endl;
 }
 
 size_t CompactInfluenceMaximizer::compute(NodeId i){
@@ -664,8 +665,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
         }
         B[offset_+i]=node;
       };
-      // size_t granularity = utils::node_limit;
-      size_t granularity = 10;
+      size_t granularity = utils::node_limit;
+      // size_t granularity = 10;
       tmap::Tree::foreach_index(res, 0, re_compute, granularity, true);
       #if defined(DEBUG)
       cout << "   finish recompute" << endl;
