@@ -63,11 +63,11 @@ class CompactInfluenceMaximizer {
     center_id = sequence<size_t>(n);
     influence = sequence<size_t>(n);
     #if defined(MEM)
-    cout << "**size of is_center is " << sizeof(bool)*n << endl;
-    cout << "**size of is_seed is " << sizeof(bool)*n << endl;
-    cout << "**size of center_id is " << sizeof(size_t)*n << endl;
-    cout << "**size of influence is "<< sizeof(size_t)*n << endl;
-    cout << "**size of hash_edges is " << sizeof(hash_edges[0])*R << endl;
+    // cout << "**size of is_center is " << sizeof(bool)*n << endl;
+    // cout << "**size of is_seed is " << sizeof(bool)*n << endl;
+    // cout << "**size of center_id is " << sizeof(size_t)*n << endl;
+    // cout << "**size of influence is "<< sizeof(size_t)*n << endl;
+    // cout << "**size of hash_edges is " << sizeof(hash_edges[0])*R << endl;
     #endif
   }
   void init_sketches();
@@ -107,7 +107,7 @@ tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
           !visit(v)) {
         Q[head++]=v;
         if (head > queue_size){
-          printf("Error, local queue full, queue size is %d\n", queue_size);
+          printf("Error, local queue full, queue size is %ld\n", queue_size);
           break;
         }
         if (is_seed[v]) {
@@ -244,11 +244,11 @@ void CompactInfluenceMaximizer::init_sketches() {
   #if defined(MEM)
   // cout << "--size of center_root is " << sizeof(NodeId)*max_n_cc << endl;
   // cout << "--size of cc_offset is " << sizeof(NodeId)*(max_n_cc+1) << endl;
-  cout << "init_sketches time: " << tt.stop() << endl;
   cout << "union time time: " << t_union_find.get_total() << endl;
   cout << "sort time: " << t_sort.get_total() << endl;
   cout << "compute sketch time: " << t_sketch.get_total() << endl;
   cout << "write sketch time: " << t_write_sketch.get_total() << endl;
+  cout << "init_sketches time: " << tt.get_total() << endl;
   #endif
 }
 
@@ -446,9 +446,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
 	// std::priority_queue<NodeId, vector<NodeId>, decltype(cmp)> Q(cmp);
   
   #if defined(MEM)
-  cout << "**size of seeds is " << sizeof(pair<NodeId,float>)*k << endl;
-  cout << "..size of heap is " << sizeof(NodeId)*n << endl;
-  cout << "..size of renew is " << sizeof(bool)*n << endl;
+  // cout << "**size of seeds is " << sizeof(pair<NodeId,float>)*k << endl;
+  // cout << "..size of heap is " << sizeof(NodeId)*n << endl;
+  // cout << "..size of renew is " << sizeof(bool)*n << endl;
   #endif
   #if defined(EVAL)
   num_evals=0;
