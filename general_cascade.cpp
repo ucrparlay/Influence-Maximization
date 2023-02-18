@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     auto res = gc.Run(seed_i.subseq(0,k), num_iter);
     double eval_time = evalute_time.stop();
     cout << "time: " << eval_time << endl;
-    cout << res << endl;
+    printf("%.5lf\n", res);
     if (eval_time > 600){
       cout << "!!! per evaluation is more than 10min " << endl;
       break;
