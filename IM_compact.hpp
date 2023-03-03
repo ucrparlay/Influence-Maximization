@@ -125,6 +125,7 @@ tuple<optional<NodeId>, bool, size_t> CompactInfluenceMaximizer::get_center(
 
 void CompactInfluenceMaximizer::init_sketches() {
   timer tt;
+  tt.start();
   parallel_for(0, n, [&](size_t i) {
     if (_hash((NodeId)i) < compact_rate * UINT_N_MAX){
       is_center[i] = true;
@@ -157,8 +158,10 @@ void CompactInfluenceMaximizer::init_sketches() {
   // cout << "--size of offset is " << sizeof(NodeId)*n << endl;
   #endif
   uint max_n_cc=0;
-  cout << "initial sketching time: " << tt.stop() << endl;
+  #if defined(BREAKDOWN)
+  cout << "allocating sketching memory time: " << tt.stop() << endl;
   tt.start();
+  #endif
   for (size_t r = 0; r < R; r++) {
     // cout << "r = " << r << endl;
     t_union_find.start();
@@ -241,15 +244,15 @@ void CompactInfluenceMaximizer::init_sketches() {
     });
     t_write_sketch.stop();
   }
-  #if defined(MEM)
   // cout << "--size of center_root is " << sizeof(NodeId)*max_n_cc << endl;
   // cout << "--size of cc_offset is " << sizeof(NodeId)*(max_n_cc+1) << endl;
+  #if defined(BREAKDOWN)
   cout << "union time time: " << t_union_find.get_total() << endl;
   cout << "sort time: " << t_sort.get_total() << endl;
   cout << "compute sketch time: " << t_sketch.get_total() << endl;
   cout << "write sketch time: " << t_write_sketch.get_total() << endl;
-  cout << "init_sketches time: " << tt.get_total() << endl;
   #endif
+  // cout << "init_sketches time: " << tt.get_total() << endl;
 }
 
 size_t CompactInfluenceMaximizer::compute(NodeId i){
@@ -397,7 +400,7 @@ NodeId CompactInfluenceMaximizer::select_winning_tree(sequence<bool>& renew,
     #if defined(EVAL)
       size_t _num_evals = count(renew, true);
       num_evals+= _num_evals;
-      cout << "re-evaluate: " << _num_evals << endl;
+      // cout << "re-evaluate: " << _num_evals << endl;
     #endif
     update(heap, renew, (NodeId)0, (NodeId)n, seed);
   }
@@ -437,9 +440,11 @@ NodeId CompactInfluenceMaximizer::select_greedy(int round){
 
 sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   timer tt;
+  tt.start();
   sequence<pair<NodeId, float>> seeds(k);
   sequence<NodeId> heap(n);
   sequence<bool> renew(n);
+  tt.stop();
   // for priority queue
   // auto cmp = [&](NodeId left, NodeId right) {
   //   return (influence[left] <influence[right]); };
@@ -456,10 +461,22 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
   // NodeId seed_idx;
   NodeId seed;
   // first round
+  timer t_compute;
   for (int round = 0; round < k; round++) {
-    tt.start();
     // ---begin winning tree---
+    
+    if (round == 0){
+      tt.start();
+    }else{
+      t_compute.start();
+    }
     seed = select_winning_tree(renew, heap, round);
+    if (round == 0){
+      #if defined(BREAKDOWN)
+      cout << "construct priority queue time: " << tt.stop() << endl;
+      #endif
+      t_compute.start();
+    }
     // ---end winning tree---
 
     // ---begin write max---
@@ -480,9 +497,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
     // --- end greedy ---
     float influence_gain = influence[seed] / (R + 0.0);
     seeds[round] = {seed, influence_gain};
-    if (round == 0){
-      cout << "Till first round time: " << t_first.stop() << endl;
-    }
+    // if (round == 0){
+    //   cout << "Till first round time: " << t_first.stop() << endl;
+    // }
     influence[seed] = 0;
     is_seed[seed] = true;
     renew[seed] = true;
@@ -499,12 +516,14 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
         }
       }
     });
-    tt.stop();
+    t_compute.stop();
     #if defined(SCORE)
       cout << "scores: "<< seeds[round].second << endl;
     #endif
   }
-  cout << "select_seeds time: " << tt.get_total() << endl;
+  #if defined(BREAKDOWN)
+  cout << "computing selection time: " << t_compute.get_total() << endl;
+  #endif
   #if defined(EVAL)
     cout << "total re-evaluate times: " << num_evals << endl;
   #endif
@@ -513,23 +532,28 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds(int k) {
 
 
 sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int K) {
+  timer tt;
+  tt.start();
   using key_val = pair<size_t, NodeId>;
   sequence<pair<NodeId, float>> seeds(K);
   auto cmp = [&](key_val left, key_val right) {
 		return (left.first < right.first) || (left.first==right.first && left.second > right.second); };
 	std::priority_queue<key_val, vector<key_val>, decltype(cmp)> q(cmp);
   sequence<int> iteration(n);
-	for (size_t i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
 		q.push(make_pair(influence[i], i));
     iteration[i]=0;
 	}
+  #if defined(BREAKDOWN)
+  cout << "construct priority queue time: " << tt.stop() << endl;
+  #endif
   // #if defined(EVAL)
 	size_t total_tries = 0;
   // #endif
   size_t tries=0;
   
-  timer tt;
-  tt.start();
+  timer t_compute;
+  t_compute.start();
 	for (int k = 0; k < K;) {
 		const auto node = q.top();
     NodeId u = node.second;
@@ -553,7 +577,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
         }
       });
       #if defined(EVAL)
-        cout << "re-evaluate: " << tries << endl;
+        // cout << "re-evaluate: " << tries << endl;
       #endif
       total_tries+= tries;
       #if defined(SCORE)
@@ -568,7 +592,11 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
 			q.push(make_pair(influence[u], u));
 		}
 	}
-  cout << "select_seeds time: " << tt.get_total() << endl;
+  t_compute.stop();
+  #if defined(BREAKDOWN)
+  cout << "computing selection time: " << t_compute.get_total() << endl;
+  #endif
+  // cout << "select_seeds time: " << tt.get_total() << endl;
   #if defined(EVAL)
   cout << "total re-evaluate times: " << total_tries << endl;
   #endif
@@ -577,6 +605,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
 
 
 sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K){
+  timer tt;
+  tt.start();
   sequence<pair<NodeId, float>> seeds(K);
   using key_type = pair<size_t, NodeId>;
   using value_type = NodeId;
@@ -604,10 +634,13 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
   tmap::node* res;
   tmap::node* rem;
   rem = m1.root;
-  timer tt;
+  #if defined(BREAKDOWN)
+  cout << "construct priority queue time: " << tt.stop() << endl;
+  #endif
   // size_t remain_size = n;
+  timer t_compute;
+  t_compute.start();
   for (int k = 0; k<K; k++){
-    tt.start();
     #if defined(DEBUG)
     cout << "k = " << k << endl;
     #endif
@@ -743,13 +776,15 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
     rem = tmap::Tree::multi_insert_sorted(rem, A.data(), A.size(), replace);
     #if defined(EVAL)
     size_t re_evals = count(B_flag.cut(0, offset_), true);
-    cout << "re-evaluate: " << re_evals << endl;
+    // cout << "re-evaluate: " << re_evals << endl;
     total_tries+= re_evals;
     #endif
     
-    tt.stop();
   }
-  cout << "select_seeds time: " << tt.get_total() << endl;
+  t_compute.stop();
+  #if defined(BREAKDOWN)
+  cout << "computing selection time: " << t_compute.get_total() << endl;
+  #endif
   #if defined(EVAL)
   cout << "total re-evaluate times: " << total_tries << endl;
   #endif

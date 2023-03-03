@@ -31,11 +31,12 @@ int main(int argc, char* argv[]){
     #endif
     if (P.getOption("-compact")) {
       timer tt;
-      t_first.reset();
-      t_first.start();
+      tt.start();
       cout << "compact " << compact << endl;
       CompactInfluenceMaximizer compact_IM_solver(graph, compact, R);
       compact_IM_solver.init_sketches();
+      cout << "sketch construction time: " << tt.stop() << endl;
+      tt.start();
       sequence<pair<NodeId, float>> seeds;
       if (P.getOption("-Q")){
         seeds = compact_IM_solver.select_seeds_prioQ(k);
@@ -44,7 +45,8 @@ int main(int argc, char* argv[]){
       }else{
         seeds = compact_IM_solver.select_seeds(k);
       }
-      cout << "total time: " << tt.stop() << endl;
+      cout << "seed selection time: " << tt.stop() << endl;
+      cout << "total time: " << tt.get_total() << endl;
       cout << "seeds: ";
       for (auto t: seeds) cout << t.first << ' ';
       cout << endl;
