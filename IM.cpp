@@ -19,6 +19,10 @@ int main(int argc, char* argv[]){
     // int option = P.getOptionInt("-option", 2);
     // bool CELF = P.getOption("-celf");
     float compact = P.getOptionDouble("-compact", 1.0);
+    // construct_ctl = P.getOptionInt("-cg", 512);
+    // extract_ctl = P.getOptionInt("-eg", 512);
+    // update_ctl = P.getOptionInt("-ug", 512);
+    // block_size = P.getOptionInt("-block", 1024);
     // thresh = P.getOptionInt("-thresh", 5);
     // Graph graph = read_txt(file);
     // graph.symmetric = true;

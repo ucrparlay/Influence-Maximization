@@ -87,8 +87,7 @@ if __name__ == '__main__':
     "scale_BST": "-PAM"}
     # for folder, option in folders.items():
     #     run_infuser_scale_all(folder, option)
-    # option = "-PAM"
-    # run_im_compact_all(folder, 1, option)
+    # run_infuser_scale_all('scale_BST_nomax', '-PAM')
     # folders = ["stdQ2", "BST2", "WinTree2"]
     # options = ['-Q', '-PAM', '']
     # folders = ["Breakdown/stdQ", "Breakdown/BST", "Breakdown/WinTree"]
@@ -98,12 +97,14 @@ if __name__ == '__main__':
     #     analyse_seeds.collect_time_all(folder, folder)
     #     analyse_seeds.collect_memory_all(folder, folder)
     # folder = folders[2]
+    run_infuser_scale_all('scale_WinTree_sort', '')
     graphs = ['Epinions1_sym.bin', 'Slashdot_sym.bin',
     'DBLP_sym.bin', 'Youtube_sym.bin','com-orkut_sym.bin',
     'soc-LiveJournal1_sym.bin', 'RoadUSA_sym.bin',
     'Household.lines_5_sym.bin','CHEM_5_sym.bin']
-    analyse_seeds.collect_time_all("scale_BST","scale_BST", graphs)
-    analyse_seeds.collect_time_all( "scale_stdQ","scale_stdQ",  graphs)
+    # ]
+    analyse_seeds.collect_time_all("scale_WinTree_sort","scale_WinTree_sort", graphs)
+    # analyse_seeds.collect_time_all( "scale_stdQ","scale_stdQ",  graphs)
     # analyse_seeds.collect_memory_all(folder, folder)
         # run_im_compact_all(folders[i], options[i])
     # analyse_seeds.collect_evalues_all(folder, folder)

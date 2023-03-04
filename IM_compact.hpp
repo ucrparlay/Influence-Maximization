@@ -18,7 +18,9 @@ using namespace parlay;
 
 // tree stores <influence, value's index(or saying the vertex id)>
 timer t_first;
-
+// NodeId construct_ctl;
+// NodeId extract_ctl;
+// NodeId update_ctl;
 #if defined(EVAL)
 size_t num_evals;
 #endif
@@ -37,12 +39,14 @@ class CompactInfluenceMaximizer {
   tuple<optional<NodeId>, bool, size_t> get_center(size_t graph_id, NodeId x, NodeId * Q);
   size_t compute(NodeId i);
   size_t compute_pal(NodeId i);
-  void construct(sequence<NodeId>& heap, NodeId start, NodeId end, NodeId& root);
+  void construct(sequence<NodeId>& heap, NodeId start, NodeId end, NodeId& root, NodeId gran_ctl);
   NodeId select_winning_tree(sequence<bool>& renew,sequence<NodeId>& heap, int round);
   NodeId select_write_max(int round);
   NodeId select_greedy(int round);
-  void update(sequence<NodeId>& heap, sequence<bool>& renew, NodeId start, NodeId end, NodeId& root);
-  void extract(sequence<NodeId>& heap, sequence<bool>& renew, NodeId start, NodeId end);
+  void update(sequence<NodeId>& heap, sequence<bool>& renew, NodeId start, 
+            NodeId end, NodeId& root, NodeId gran_ctl);
+  void extract(sequence<NodeId>& heap, sequence<bool>& renew, NodeId start, 
+            NodeId end, NodeId gran_ctl);
  public:
   CompactInfluenceMaximizer() = delete;
   CompactInfluenceMaximizer(Graph& graph, float compact_rate, size_t R)
@@ -162,6 +166,7 @@ void CompactInfluenceMaximizer::init_sketches() {
   cout << "allocating sketching memory time: " << tt.stop() << endl;
   tt.start();
   #endif
+  
   for (size_t r = 0; r < R; r++) {
     // cout << "r = " << r << endl;
     t_union_find.start();
@@ -174,7 +179,7 @@ void CompactInfluenceMaximizer::init_sketches() {
         if (u < v && hash_edges[r](u, v, G.W[j])) {
           unite(u,v,label);
         }
-      });
+      }, BLOCK_SIZE);
     });
     parallel_for(0, n, [&](size_t i){
       auto l =find(i,label);
@@ -185,8 +190,12 @@ void CompactInfluenceMaximizer::init_sketches() {
     // }
     t_union_find.stop();
     t_sort.start();
-    // sort_inplace(belong);
-    integer_sort_inplace(belong, [&](pair<NodeId,NodeId> a){return a.first;});
+    // when n is small, inter_sort is not as good as sort
+    // if (belong.size() > 1e5){
+    //   integer_sort_inplace(belong, [&](const pair<NodeId,NodeId>& a){return a.first;});
+    // }else{
+      sort_inplace(belong, [&](const pair<NodeId,NodeId>& a, const pair<NodeId, NodeId>& b){return a.first < b.first;});
+    // }
     t_sort.stop();
     t_sketch.start();
 
@@ -297,16 +306,22 @@ size_t CompactInfluenceMaximizer::compute_pal(NodeId i){
 }
 
 void CompactInfluenceMaximizer::construct(sequence<NodeId>& tree, 
-                            NodeId start, NodeId end, NodeId& root){
+                            NodeId start, NodeId end, NodeId& root, NodeId gran_ctl){
   if (start == end - 1){
     root=start;
     return;
   }
   NodeId m = (start+end) >>1;
   NodeId left, right;
-  par_do(
-      [&](){construct(tree, start, m, left);},
-      [&](){construct(tree, m, end, right);});
+  if (end - start >  gran_ctl){
+    par_do(
+      [&](){construct(tree, start, m, left, gran_ctl);},
+      [&](){construct(tree, m, end, right, gran_ctl);});
+  }else{
+    construct(tree, start, m, left, gran_ctl);
+    construct(tree, m, end, right, gran_ctl);
+  }
+  
   
   tree[m]= influence[left]>= influence[right]? left: right;
   root = tree[m];
@@ -315,7 +330,7 @@ void CompactInfluenceMaximizer::construct(sequence<NodeId>& tree,
 
 void CompactInfluenceMaximizer::update(sequence<NodeId>& tree, 
             sequence<bool>& renew,
-            NodeId start, NodeId end, NodeId& root){
+            NodeId start, NodeId end, NodeId& root, NodeId gran_ctl){
     if (start == end - 1){
         // need to check tht logic
         if (renew[start]){
@@ -332,9 +347,15 @@ void CompactInfluenceMaximizer::update(sequence<NodeId>& tree,
       return;
     }
     NodeId left, right;
-    par_do(
-        [&](){update(tree, renew, start, m, left);},
-        [&](){update(tree, renew, m, end, right);});
+    if (end-start > gran_ctl){
+      par_do(
+        [&](){update(tree, renew, start, m, left, gran_ctl);},
+        [&](){update(tree, renew, m, end, right, gran_ctl);});
+    }else{
+      update(tree, renew, start, m, left, gran_ctl);
+      update(tree, renew, m, end, right, gran_ctl);
+    }
+    
     
     tree[m]= influence[left]>= influence[right]? left: right;
     root = tree[m];
@@ -344,7 +365,7 @@ void CompactInfluenceMaximizer::update(sequence<NodeId>& tree,
 
 void CompactInfluenceMaximizer::extract(
           sequence<NodeId>& tree, 
-          sequence<bool>& renew, NodeId start, NodeId end){
+          sequence<bool>& renew, NodeId start, NodeId end, NodeId gran_ctl){
   if (start +1 == end){
     if (influence[start] >= max_influence){
       if (!renew[start]){
@@ -375,34 +396,43 @@ void CompactInfluenceMaximizer::extract(
       [&](size_t a, size_t b){return a<b;});
     }
   }
-  par_do(
-        [&](){extract(tree, renew, start, m);},
-        [&](){extract(tree, renew, m, end);});
+  if (end - start > gran_ctl){
+    par_do(
+        [&](){extract(tree, renew, start, m, gran_ctl);},
+        [&](){extract(tree, renew, m, end, gran_ctl);});
+  }else{
+    extract(tree, renew, start, m, gran_ctl);
+    extract(tree, renew, m, end, gran_ctl);
+  }
+  
   return;
 }
 
 
 
-NodeId CompactInfluenceMaximizer::select_winning_tree(sequence<bool>& renew,
-                                                      sequence<NodeId>& heap, int round){
+NodeId CompactInfluenceMaximizer::select_winning_tree(
+  sequence<bool>& renew, sequence<NodeId>& heap, int round){
   NodeId seed;
+  // NodeId construct_ctl = 1024;
+  // NodeId extract_ctl = 1024;
+  // NodeId update_ctl = 1024;
   if (round == 0){
     parallel_for(0, n, [&](size_t i){
       renew[i]= false;
     });
     // has problem
     // update(heap, renew, (NodeId)0, (NodeId)n, seed);
-    construct(heap, (NodeId)0, (NodeId)n, seed);
+    construct(heap, (NodeId)0, (NodeId)n, seed, BLOCK_SIZE);
     max_influence = *(max_element(influence));
   }else{
     max_influence = 0;
-    extract(heap, renew,(NodeId)0, (NodeId)n);
+    extract(heap, renew,(NodeId)0, (NodeId)n, BLOCK_SIZE);
     #if defined(EVAL)
       size_t _num_evals = count(renew, true);
       num_evals+= _num_evals;
       // cout << "re-evaluate: " << _num_evals << endl;
     #endif
-    update(heap, renew, (NodeId)0, (NodeId)n, seed);
+    update(heap, renew, (NodeId)0, (NodeId)n, seed, BLOCK_SIZE);
   }
   return seed;
 }
