@@ -44,16 +44,18 @@ def run_infuser_scale(graph,  w, folder, option):
     g = graph.split('/')[-1]
     file_out = f'{IM_DIR}/{folder}/{g[:-4]}.txt'
     R=256
-    c=1.0
+    c=0.1
     command = f'{IM_DIR}/../IM {graph} -k 100 -R {R} -w {w} -compact {c} {option}'
-    n_threads = [192, 96, 48, 24, 12, 8, 4, 2, 1]
-    cores = ['0-191', '0-95', '0-95:2', '0-95:4', '0-47:4', '0-31:4', '0-15:4', '0-7:4','0-3:4']
+    # n_threads = [192, 96, 48, 24, 12, 8, 4, 2, 1]
+    n_threads = [1,2,4,8,12,24,48,96,192]
+    cores = ['0-3:4', '0-7:4', '0-15:4', '0-31:4','0-47:4', '0-95:4', '0-95:2', '0-95', '0-191']
+    # cores = ['0-191', '0-95', '0-95:2', '0-95:4', '0-47:4', '0-31:4', '0-15:4', '0-7:4','0-3:4']
     for i in range(len(n_threads)):
         numa = "numactl -i all"
         n_thread = n_threads[i]
         core = cores[i]
         print(f'running IM compact on {graph} n_thread {n_thread} cores {core}')
-        if (":4" in core):
+        if (n_thread == 1):
             numa = ''
         subprocess.call(f'echo n_threads {n_thread} cores {core} R {R} >> {file_out}',shell=True)
         subprocess.call(
@@ -97,13 +99,13 @@ if __name__ == '__main__':
     #     analyse_seeds.collect_time_all(folder, folder)
     #     analyse_seeds.collect_memory_all(folder, folder)
     # folder = folders[2]
-    run_infuser_scale_all('scale_WinTree_sort', '')
+    run_infuser_scale_all('scale_WinTree_c', '')
     graphs = ['Epinions1_sym.bin', 'Slashdot_sym.bin',
     'DBLP_sym.bin', 'Youtube_sym.bin','com-orkut_sym.bin',
     'soc-LiveJournal1_sym.bin', 'RoadUSA_sym.bin',
     'Household.lines_5_sym.bin','CHEM_5_sym.bin']
     # ]
-    analyse_seeds.collect_time_all("scale_WinTree_sort","scale_WinTree_sort", graphs)
+    analyse_seeds.collect_time_all("scale_WinTree_c","scale_WinTree_c", graphs)
     # analyse_seeds.collect_time_all( "scale_stdQ","scale_stdQ",  graphs)
     # analyse_seeds.collect_memory_all(folder, folder)
         # run_im_compact_all(folders[i], options[i])
