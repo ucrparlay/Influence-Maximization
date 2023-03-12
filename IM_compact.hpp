@@ -786,7 +786,10 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
     auto make_par = [&](size_t i) -> par { NodeId node = B[i]; return make_pair(make_pair(influence[node],node),node); };
     // m1 = tmap::multi_insert(m1, delayed_seq<par>(offset_, make_par));
     auto replace = [] (const tmap::V& a, const tmap::V& b) {return b;}; 
-    parlay::sequence<tmap::E> A = tmap::Build::sort_remove_duplicates(delayed_seq<par>(offset_, make_par));
+    // parlay::sequence<tmap::E> A = tmap::Build::sort_remove_duplicates(delayed_seq<par>(offset_, make_par));
+    // constexpr static auto less = [] (entry a, entry b) {
+    //   return entry::comp(entry::get_key(a), entry::get_key(b));};
+    parlay::sequence<tmap::E> A = parlay::sort(delayed_seq<par>(offset_, make_par), [&](const tmap::E a, const tmap::E b){return entry::comp(a.first, b.first);});
     #if defined(DEBUG)
     cout << " multi insert sequence size " << A.size() << endl;
     #endif

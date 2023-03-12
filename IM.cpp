@@ -19,6 +19,7 @@ int main(int argc, char* argv[]){
     // int option = P.getOptionInt("-option", 2);
     // bool CELF = P.getOption("-celf");
     float compact = P.getOptionDouble("-compact", 1.0);
+    int t = P.getOptionInt("-t", 3);
     // construct_ctl = P.getOptionInt("-cg", 512);
     // extract_ctl = P.getOptionInt("-eg", 512);
     // update_ctl = P.getOptionInt("-ug", 512);
@@ -35,25 +36,40 @@ int main(int argc, char* argv[]){
     #endif
     if (P.getOption("-compact")) {
       timer tt;
-      tt.start();
+      // tt.start();
       cout << "compact " << compact << endl;
-      CompactInfluenceMaximizer compact_IM_solver(graph, compact, R);
-      compact_IM_solver.init_sketches();
-      cout << "sketch construction time: " << tt.stop() << endl;
-      tt.start();
-      sequence<pair<NodeId, float>> seeds;
-      if (P.getOption("-Q")){
-        seeds = compact_IM_solver.select_seeds_prioQ(k);
-      }else if (P.getOption("-PAM")){
-        seeds = compact_IM_solver.select_seeds_PAM(k);
-      }else{
-        seeds = compact_IM_solver.select_seeds(k);
-      }
-      cout << "seed selection time: " << tt.stop() << endl;
-      cout << "total time: " << tt.get_total() << endl;
+      double sketch_time = 0;
+      double select_time = 0;
+      for (int i = 0; i<t+1; i++){
+        printf("----------round %d--------------\n", i);
+        tt.start();
+        CompactInfluenceMaximizer compact_IM_solver(graph, compact, R);
+        compact_IM_solver.init_sketches();
+        double _sketch_time = tt.stop();
+        cout << "sketch construction time: " << _sketch_time << endl;
+        if (i>0){sketch_time += _sketch_time;}
+        tt.start();
+        sequence<pair<NodeId, float>> seeds;
+        if (P.getOption("-Q")){
+          seeds = compact_IM_solver.select_seeds_prioQ(k);
+        }else if (P.getOption("-PAM")){
+          seeds = compact_IM_solver.select_seeds_PAM(k);
+        }else{
+          seeds = compact_IM_solver.select_seeds(k);
+        }
+      double _select_time = tt.stop();
+      cout << "seed selection time: " << _select_time << endl;
+      cout << "total time: " << _select_time+_sketch_time << endl;
+      if (i>0) {select_time += _select_time;}
+      // double _total_time = tt.get
+      // cout << "total time: " << tt.get_total() << endl;
       cout << "seeds: ";
-      for (auto t: seeds) cout << t.first << ' ';
+      for (auto s: seeds) cout << s.first << ' ';
       cout << endl;
+      }
+      cout << "average sketch time: " << sketch_time/t << endl;
+      cout << "average select time: " << select_time/t << endl;
+      cout << "average total time: " << (sketch_time+select_time)/t << endl;
     }
     // else{
     //   InfluenceMaximizer IM_solver(graph, R);
