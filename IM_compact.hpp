@@ -25,6 +25,42 @@ timer t_first;
 size_t num_evals;
 #endif
 int thresh;
+
+// template<typename R, typename Key>
+// void integer_sort_inplace(R&& in, Key&& key) {
+//   static_assert(is_random_access_range_v<R>);
+//   static_assert(std::is_invocable_v<Key, range_reference_type_t<R>>);
+//   using key_type = std::invoke_result_t<Key, range_reference_type_t<R>>;
+//   static_assert(std::is_integral_v<key_type>);
+//   static_assert(std::is_unsigned_v<key_type>);
+//   static_assert(std::is_swappable_v<range_reference_type_t<R>>);
+//   internal::integer_sort_inplace(make_slice(in), std::forward<Key>(key));
+// }
+
+// template<typename R, typename Compare>
+// void sort_inplace(R&& in, Compare&& comp) {
+//   static_assert(is_random_access_range_v<R>);
+//   static_assert(std::is_invocable_r_v<bool, Compare, range_reference_type_t<R>, range_reference_type_t<R>>);
+//   static_assert(std::is_swappable_v<range_reference_type_t<R>>);
+//   internal::sample_sort_inplace(make_slice(in), std::forward<Compare>(comp));
+// }
+
+template<typename R, typename Key>
+void my_sort(R&& in, R&& temp, Key&& key){
+  static_assert(is_random_access_range_v<R>);
+  static_assert(std::is_swappable_v<range_reference_type_t<R>>);
+  if (in.size() > 1e5){
+    // auto key = [&](const pair<NodeId,NodeId>& a){return a.first;};
+    // using Key = typename key;
+    parlay::internal::integer_sort_<std::true_type, uninitialized_relocate_tag>(make_slice(in), make_slice(temp), make_slice(in), std::forward<Key>(key), (size_t)0, (size_t)0);
+  }else{
+    auto comp = [&](const pair<NodeId,NodeId>& a, const pair<NodeId, NodeId>& b){return a.first < b.first;};
+    sort_inplace(in,comp);
+  }
+}
+
+
+
 class CompactInfluenceMaximizer {
  private:
   size_t n, R, center_cnt, max_influence, queue_size;
@@ -136,9 +172,15 @@ void CompactInfluenceMaximizer::init_sketches() {
       center_id[i] = 1;
     }
   });
+  cout << "fill is_center, center_id time " << tt.stop() << endl;
+  tt.start();
   center_cnt = parlay::scan_inplace(center_id);
+  cout << "scan_inplace time "<< tt.stop() << endl;
+  tt.start();
 
   sketches = sequence(R, sequence<NodeId>(center_cnt));
+  cout << "allocate sequence of sequence time " << tt.stop() << endl;
+  tt.start();
   #if defined(MEM)
   // cout << "**size of sketches is " << (sizeof(NodeId)*center_cnt)*R << endl;
   #endif
@@ -149,6 +191,8 @@ void CompactInfluenceMaximizer::init_sketches() {
                                         find_atomic_halve>(find, splice);
   sequence<NodeId> label(n);
   sequence<pair<NodeId, NodeId>> belong(n);
+  cout << "allocate label, belong time " << tt.stop() << endl;
+  tt.start();
   #if defined(MEM)
   // cout << "--size of label is " << sizeof(NodeId)*n << endl;
   // cout << "--size of belong is " << sizeof(pair<NodeId,NodeId>)*n << endl;
@@ -166,6 +210,13 @@ void CompactInfluenceMaximizer::init_sketches() {
   cout << "allocating sketching memory time: " << tt.stop() << endl;
   tt.start();
   #endif
+  timer scan_timer;
+  timer cc_timer;
+  sequence<NodeId> center_root(n);
+  sequence<NodeId> cc_offset(n+1);
+  sequence<NodeId> offset(n);
+
+  sequence<pair<NodeId, NodeId>> sort_helper(n);
   
   for (size_t r = 0; r < R; r++) {
     // cout << "r = " << r << endl;
@@ -191,15 +242,11 @@ void CompactInfluenceMaximizer::init_sketches() {
     t_union_find.stop();
     t_sort.start();
     // when n is small, inter_sort is not as good as sort
-    if (belong.size() > 1e5){
-      integer_sort_inplace(belong, [&](const pair<NodeId,NodeId>& a){return a.first;});
-    }else{
-      sort_inplace(belong, [&](const pair<NodeId,NodeId>& a, const pair<NodeId, NodeId>& b){return a.first < b.first;});
-    }
+    auto key = [&](const pair<NodeId,NodeId>& a){return a.first;};
+    my_sort(belong, sort_helper, key);
     t_sort.stop();
     t_sketch.start();
 
-    sequence<NodeId> offset(n);
     offset[0]=0;
     parallel_for(1, n, [&](size_t i){
       if (belong[i-1].first != belong[i].first){
@@ -208,12 +255,13 @@ void CompactInfluenceMaximizer::init_sketches() {
         offset[i]=0;
       }
     });
+    scan_timer.start();
     auto n_cc = scan_inclusive_inplace(offset) +1;
+    scan_timer.stop();
     if (n_cc > max_n_cc){
       max_n_cc = n_cc;
     }
-    sequence<NodeId> center_root(n_cc);
-    sequence<NodeId> cc_offset(n_cc+1);
+    cc_timer.start();
     parallel_for(0,n,[&](size_t i){
       if ( i== 0 || belong[i-1].first != belong[i].first){
         NodeId cc_i = offset[i];
@@ -231,6 +279,7 @@ void CompactInfluenceMaximizer::init_sketches() {
         }
       }
     });
+    cc_timer.stop();
     t_sketch.stop();
     cc_offset[n_cc]= n;
     t_write_sketch.start();
@@ -259,6 +308,8 @@ void CompactInfluenceMaximizer::init_sketches() {
   cout << "union time time: " << t_union_find.get_total() << endl;
   cout << "sort time: " << t_sort.get_total() << endl;
   cout << "compute sketch time: " << t_sketch.get_total() << endl;
+  cout << "   scan time: " << scan_timer.get_total() << endl;
+  cout << "   compute time: " << cc_timer.get_total() << endl;
   cout << "write sketch time: " << t_write_sketch.get_total() << endl;
   #endif
   // cout << "init_sketches time: " << tt.get_total() << endl;
@@ -637,6 +688,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
   using tmap = pam_map<entry>;
   auto gen_par = [&](NodeId i) -> par { return make_pair(make_pair(influence[i],i),i);};
   tmap m1;
+  tmap::reserve((NodeId)n);
   m1 = tmap::multi_insert(m1, delayed_seq<par>((NodeId)n, gen_par));
   #if defined(DEBUG)
   cout << "generate m1 from influence[.]" << endl;
@@ -799,7 +851,6 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
     // cout << "re-evaluate: " << re_evals << endl;
     total_tries+= re_evals;
     #endif
-    
   }
   t_compute.stop();
   #if defined(BREAKDOWN)
