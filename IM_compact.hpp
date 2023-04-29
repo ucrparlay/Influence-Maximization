@@ -12,7 +12,6 @@
 #include "union_find.hpp"
 #include "pam/pam.h"
 
-// #include "WinnerTree.hpp"
 using namespace std;
 using namespace parlay;
 
@@ -25,25 +24,6 @@ timer t_first;
 size_t num_evals;
 #endif
 int thresh;
-
-// template<typename R, typename Key>
-// void integer_sort_inplace(R&& in, Key&& key) {
-//   static_assert(is_random_access_range_v<R>);
-//   static_assert(std::is_invocable_v<Key, range_reference_type_t<R>>);
-//   using key_type = std::invoke_result_t<Key, range_reference_type_t<R>>;
-//   static_assert(std::is_integral_v<key_type>);
-//   static_assert(std::is_unsigned_v<key_type>);
-//   static_assert(std::is_swappable_v<range_reference_type_t<R>>);
-//   internal::integer_sort_inplace(make_slice(in), std::forward<Key>(key));
-// }
-
-// template<typename R, typename Compare>
-// void sort_inplace(R&& in, Compare&& comp) {
-//   static_assert(is_random_access_range_v<R>);
-//   static_assert(std::is_invocable_r_v<bool, Compare, range_reference_type_t<R>, range_reference_type_t<R>>);
-//   static_assert(std::is_swappable_v<range_reference_type_t<R>>);
-//   internal::sample_sort_inplace(make_slice(in), std::forward<Compare>(comp));
-// }
 
 template<typename R, typename Key>
 void my_sort(R&& in, R&& temp, Key&& key){
@@ -58,8 +38,6 @@ void my_sort(R&& in, R&& temp, Key&& key){
     sort_inplace(in,comp);
   }
 }
-
-
 
 class CompactInfluenceMaximizer {
  private:

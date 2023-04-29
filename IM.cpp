@@ -1,11 +1,8 @@
 #include <iostream>
-// #include "IM.hpp"
 #include "IM_compact.hpp"
 #include "parseCommandLine.hpp"
-// #include "PMC.hpp"
 #include "get_time.hpp"
 
-// ./IM /data/lwang323/graph/bin/Youtube_sym.bin -k 200 -R 200 -w 0.1 -celf
 int main(int argc, char* argv[]){
     CommandLine P(argc, argv);
     if (argc < 1) {
@@ -71,23 +68,5 @@ int main(int argc, char* argv[]){
       cout << "average select time: " << select_time/t << endl;
       cout << "average total time: " << (sketch_time+select_time)/t << endl;
     }
-    // else{
-    //   InfluenceMaximizer IM_solver(graph, R);
-    //   timer t;
-    //   float cost;
-    //   t.start();
-    //   IM_solver.init_sketches(R);
-    //   cost = t.stop();
-    //   cout << "sketching time: " << cost<< endl;
-      
-    //   t.start();
-    //   auto seeds_spread = IM_solver.select_seeds(k);
-    //   cost = t.stop();
-    //   cout << "select time: " << cost  << endl;
-    //   cout << "total time: " << t.get_total() << endl;
-    //   cout << "seeds: ";
-    //   for (auto x: seeds_spread) cout << x.first << " ";
-    //   cout << endl;
-    // }
     return 0;
 }
