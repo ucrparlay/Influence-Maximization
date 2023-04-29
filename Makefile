@@ -37,7 +37,8 @@ endif
 
 CPPFLAGS = -std=c++17  -Wextra -Werror \
 $(INTN) $(INTE) $(BREAK) $(SP_BREAK) $(MEMO) $(EVALUATE) $(SCORES) \
--I/home/xding9001/PAM/include/ # -I/home/csgrads/lwang323/include/
+-I./PAM/include/ \
+-I./parlaylib/include/
 
 ifdef CILKPLUS
 CPPFLAGS += -DPARLAY_CILKPLUS -DCILK -fcilkplus
@@ -63,7 +64,6 @@ COMMON = graph.hpp parseCommandLine.hpp utilities.h get_time.hpp
 
 all: graph IM general_cascade test_PAM
 
-	
 graph: graph.cpp $(COMMON)
 	$(CC) $(CPPFLAGS) graph.cpp -o graph
 

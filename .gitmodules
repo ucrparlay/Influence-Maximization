@@ -1,0 +1,6 @@
+[submodule "PAM"]
+	path = PAM
+	url = https://github.com/cmuparlay/PAM
+[submodule "parlaylib"]
+	path = parlaylib
+	url = https://github.com/cmuparlay/parlaylib
