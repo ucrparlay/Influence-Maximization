@@ -21,11 +21,22 @@ The graphs used in our paper can be downloaded on <a href="https://drive.google.
 
 Please use the graph names ending with `_sym.bin`.
 
-#### Build and Run
+#### Build
 
 ```
 make -j
-./IM <graph> -k 100 -R 256 -w 0.1 -compact 1.0
+```
+
+#### Run Influence Maximization
+
+```
+./IM <graph_file> -k 100 -R 256 -w 0.1 -compact 1.0
+```
+
+#### Evaluate Seeds
+
+```
+./general_cascade <graph_file> <seeds_file> -w 0.1 -i 20000
 ```
 
 ### Reference
