@@ -1,4 +1,7 @@
 // #include "general_cascade.hpp"
+
+#include <sstream>
+
 #include "BFS_cascade.hpp"
 #include "graph.hpp"
 #include "parseCommandLine.hpp"

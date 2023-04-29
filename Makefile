@@ -27,15 +27,12 @@ INTE = -DELONG
 endif
 
 ifdef CLANG
-#CC = clang++
-CC = /tmp/llvm/bin/clang++
+CC = clang++
 else
 CC = g++
 endif
 
-# -Wall
-
-CPPFLAGS = -std=c++17  -Wextra -Werror \
+CPPFLAGS = -std=c++17 \
 $(INTN) $(INTE) $(BREAK) $(SP_BREAK) $(MEMO) $(EVALUATE) $(SCORES) \
 -I./PAM/include/ \
 -I./parlaylib/include/

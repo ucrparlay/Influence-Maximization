@@ -1,14 +1,9 @@
+.vscode
+.DS_Store
 Makefile
 graph
 IM
-connect
-reach
-scc
-bfs
-ldd
 union_find
-tarjan_scc
-Tarjan_scc
 log
 test
 test.cpp
@@ -17,7 +12,4 @@ data/*
 general_cascade
 seeds_*
 *.sh
-./Makefile
-scripts/*
-!scripts/*.py
 test_PAM
