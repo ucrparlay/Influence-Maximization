@@ -59,19 +59,13 @@ endif
 
 COMMON = graph.hpp parseCommandLine.hpp utilities.h get_time.hpp
 
-all: graph IM general_cascade test_PAM
+all: IM general_cascade
 
-graph: graph.cpp $(COMMON)
-	$(CC) $(CPPFLAGS) graph.cpp -o graph
-
-IM: IM.cpp IM.hpp union_find.hpp IM_compact.hpp $(COMMON)
+IM: IM.cpp union_find.hpp IM_compact.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) IM.cpp -o IM
-
-test_PAM: test_PAM.cpp
-	$(CC) $(CPPFLAGS) test_PAM.cpp -o test_PAM
 
 general_cascade: general_cascade.cpp BFS_cascade.hpp bfs.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) general_cascade.cpp -o general_cascade
 
 clean:
-	rm -f graph IM test_PAM general_cascade
+	rm -f IM general_cascade
