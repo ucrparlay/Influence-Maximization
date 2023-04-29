@@ -37,7 +37,7 @@ endif
 
 CPPFLAGS = -std=c++17  -Wextra -Werror \
 $(INTN) $(INTE) $(BREAK) $(SP_BREAK) $(MEMO) $(EVALUATE) $(SCORES) \
--I/home/lwang323/PAM/include/ # -I/home/csgrads/lwang323/include/
+-I/home/xding9001/PAM/include/ # -I/home/csgrads/lwang323/include/
 
 ifdef CILKPLUS
 CPPFLAGS += -DPARLAY_CILKPLUS -DCILK -fcilkplus
@@ -67,31 +67,14 @@ all: graph IM general_cascade test_PAM
 graph: graph.cpp $(COMMON)
 	$(CC) $(CPPFLAGS) graph.cpp -o graph
 
-IM: IM.cpp IM.hpp union_find.hpp IM_compact.hpp PMC.hpp PrunedEstimater.hpp $(COMMON)
+IM: IM.cpp IM.hpp union_find.hpp IM_compact.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) IM.cpp -o IM
+
 test_PAM: test_PAM.cpp
 	$(CC) $(CPPFLAGS) test_PAM.cpp -o test_PAM
-
-# connect: connect.h connect.cpp ldd.hpp $(COMMON)
-# 	$(CC) $(CPPFLAGS) connect.cpp -o connect
-
-# bfs: bfs.cpp bfs.hpp $(COMMON)
-# 	$(CC) $(CPPFLAGS) bfs.cpp -o bfs
 
 general_cascade: general_cascade.cpp BFS_cascade.hpp bfs.hpp $(COMMON)
 	$(CC) $(CPPFLAGS) general_cascade.cpp -o general_cascade
 
-# scc: scc.hpp scc.cpp resizable_table.h hash_bag.h $(COMMON) reach.hpp 
-# 	$(CC) $(CPPFLAGS) scc.cpp -o scc
-# tarjan_scc: tarjan_scc.hpp tarjan_scc.cpp $(COMMON)
-# 	$(CC) $(CPPFLAGS) tarjan_scc.cpp -o tarjan_scc
-# Tarjan_scc: Tarjan_scc.hpp Tarjan_scc.cpp $(COMMON)
-# 	$(CC) $(CPPFLAGS) Tarjan_scc.cpp -o Tarjan_scc
-# reach: reach.cpp reach.hpp hash_bag.h $(COMMON)
-# 	$(CC) $(CPPFLAGS) reach.cpp -o reach
-
-# union_find: union_find.cpp union_find.hpp $(COMMON)
-# 	$(CC) $(CPPFLAGS) union_find.cpp -o union_find
-
 clean:
-	rm -f graph IM general_cascade
+	rm -f graph IM test_PAM general_cascade
