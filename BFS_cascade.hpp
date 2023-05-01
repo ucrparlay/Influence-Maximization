@@ -16,7 +16,7 @@ struct GeneralCascade {
   GeneralCascade(BFS _bfs) : BFS_simulate(_bfs) {}
 
   double Run(const parlay::sequence<NodeId>& seeds, int num_iter) {
-    cout << seeds.size() <<" seeds: ";
+    cout << seeds.size() << " seeds: ";
     for (auto s: seeds){
       cout << s << " ";
     }

@@ -3,6 +3,7 @@
 Makefile
 seeds_*
 /**/__pycache__
+logs/*
 
 IM
 general_cascade
@@ -11,3 +12,5 @@ data/*
 !data/Epinions1_sym.bin
 !data/Slashdot_sym.bin
 !data/DBLP_sym.bin
+!data/Youtube_sym.bin
+!data/HT_5_sym.bin

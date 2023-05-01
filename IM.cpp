@@ -5,6 +5,7 @@
 #include "parseCommandLine.hpp"
 
 int main(int argc, char* argv[]) {
+  cout << "num_workers: " << parlay::num_workers() << endl;
   CommandLine P(argc, argv);
   if (argc < 1) {
     cerr << "Usage: " << argv[0] << " graph\n";
