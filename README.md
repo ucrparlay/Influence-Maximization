@@ -31,7 +31,7 @@ This command will download all graphs used in this paper to `./data` (except Clu
 #### Run Influence Maximization
 
 ```
-./IM [graph_file]  -R [number_of_sketches] -w [uic_edge_weight] -compact [alpha]
+./IM [graph_file] -k [num_seeds] -R [num_sketches] -w [uic_weight] -compact [alpha]
 ```
 
 #### Evaluate Seeds
@@ -44,7 +44,7 @@ seeds: [seed_1] [seed_2] ... [seed_k]
 Use the following command to evaluate the seeds with Monte-Carlo simulations:
 
 ```
-./general_cascade [graph_file] [seeds_file] -k [number_of_seeds] -w [uic_edge_weight] -i [number_of_mc_iterations]
+./general_cascade [graph_file] [seeds_file] -k [num_seeds] -w [uic_weight] -i [num_MCsimulations]
 ```
 
 ### Reference
