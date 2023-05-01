@@ -13,17 +13,7 @@ int main(int argc, char* argv[]){
     size_t k = P.getOptionInt("-k", 100);
     size_t R = P.getOptionInt("-R", 256);
     float w = P.getOptionDouble("-w", 0.02);
-    // int option = P.getOptionInt("-option", 2);
-    // bool CELF = P.getOption("-celf");
     float compact = P.getOptionDouble("-compact", 1.0);
-    int t = P.getOptionInt("-t", 3);
-    // construct_ctl = P.getOptionInt("-cg", 512);
-    // extract_ctl = P.getOptionInt("-eg", 512);
-    // update_ctl = P.getOptionInt("-ug", 512);
-    // block_size = P.getOptionInt("-block", 1024);
-    // thresh = P.getOptionInt("-thresh", 5);
-    // Graph graph = read_txt(file);
-    // graph.symmetric = true;
     Graph graph = read_graph(file);
     AssignUniWeight(graph,w);
     cout << "n: " << graph.n << " m: " << graph.m << " w: " << w << " R: " << R << " k: " << k<< endl;
@@ -33,7 +23,6 @@ int main(int argc, char* argv[]){
     #endif
     if (P.getOption("-compact")) {
       timer tt;
-      // tt.start();
       cout << "compact " << compact << endl;
       double sketch_time = 0;
       double select_time = 0;
