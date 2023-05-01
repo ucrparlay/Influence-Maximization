@@ -4,7 +4,9 @@ This repository contains code for our paper "Fast and Space-Efficient Parallel A
 
 ### Requirements
 
-- gcc or clang with C++17 features support (Tested with gcc 12 and clang 14) on Linux machines.
+- Multi-processor linux machine (tested on CentOS 8 and MacOS 13)
+- gcc or clang with C++17 features support (tested with gcc 12 and clang 14)
+- python3 (used to run scripts)
 - We use <a href="https://github.com/cmuparlay/parlaylib">parlaylib</a> for fork-join parallelism and <a href="https://github.com/cmuparlay/PAM">PAM</a> for parallel BST. They are provided as submodules in our repository.
 
 ### Getting Started
@@ -20,7 +22,7 @@ make -j
 python3 scripts/im.py
 ```
 
-#### Download More Graphs
+#### Download All Graphs
 
 ```
 python3 scripts/download.py

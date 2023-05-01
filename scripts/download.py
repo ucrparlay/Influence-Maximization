@@ -12,7 +12,7 @@ if __name__ == '__main__':
             if len(url) == 0:
                 print(f'Cannot download {graph}!')
                 continue
-            subprocess.call(f'wget -O {graph_file} --quiet {url}', shell=True)
+            subprocess.call(f'wget -O {graph_file} {url}', shell=True)
             print(f'Successfully downloaded {graph}')
         else:
             print(f'Using pre-downloaded {graph}')
