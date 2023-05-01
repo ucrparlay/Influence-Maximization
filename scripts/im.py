@@ -16,14 +16,13 @@ if __name__ == '__main__':
         print('Please build by `make -j` first.')
         assert (0)
     for graph, url, w in graphs:
-        print('')
         graph_file = f'{CURRENT_DIR}/../data/{graph}.bin'
         if not os.path.exists(graph_file):
-            print(f'Warning: {graph} does not exists')
+            # print(f'\nWarning: {graph} does not exists')
             continue
         seeds_file = f'{CURRENT_DIR}/../logs/{graph}.txt'
 
-        print(f'Running IM on {graph_file}')
+        print(f'\nRunning IM on {graph_file}')
         cmd = f'{IM} {graph_file} -k {k} -R {R} -w {w} -compact {compact} > {seeds_file}'
         subprocess.call(cmd, shell=True)
         print(f'Seeds saved to {seeds_file}')
