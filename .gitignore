@@ -1,9 +1,13 @@
 .vscode
 .DS_Store
 Makefile
-data/*
 seeds_*
 /**/__pycache__
 
 IM
 general_cascade
+
+data/*
+!data/Epinions1_sym.bin
+!data/Slashdot_sym.bin
+!data/DBLP_sym.bin
