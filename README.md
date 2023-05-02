@@ -34,7 +34,7 @@ We comment out `twitter_sym`, `friendster_sym`, `sd_arc_sym` and `Cosmo50_5_sym`
 
 For ClueWeb, it is too large to fit in dropbox. You can find it at <a href="http://webdatacommons.org/hyperlinkgraph/">Web Data Commons</a>.
 
-You can also find more graphs at <a href="http://snap.stanford.edu/">Stanford Network Analysis Project</a> or this <a href="https://drive.google.com/drive/folders/1ZuhfaLmdL-EyOiWYqZGD1rOy_oSFRWe4">google drive</a>.
+You can also download graphs manually from this link <a href="https://drive.google.com/drive/folders/1C86nDTo76aalBcmtgWWBLW6sOIhe1Btq?usp=share_link">google drive</a>.
 
 We use the `.bin` binary graph format from [GBBS](https://github.com/ParAlg/gbbs).
 
