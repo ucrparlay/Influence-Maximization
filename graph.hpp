@@ -655,6 +655,34 @@ void AssignUniWeight(Graph& graph, float w){
   }
 }
 
+double Uniform(size_t n, size_t u, size_t v, double l, double r) {
+  if (u > v) std::swap(u, v);
+  double p = 1.0 * hash64(hash64(hash64(n) + u + 1) + v + 1) / std::numeric_limits<uint64_t>::max();
+  return l + (r - l) * p;
+}
+
+void AssignUniformRandomWeight(Graph& graph, double l, double r) {
+  graph.W = sequence<float>(graph.m);
+  parallel_for(0, graph.n, [&](size_t u) {
+    parallel_for(graph.offset[u], graph.offset[u + 1], [&](size_t j) {
+      auto v = graph.E[j];
+      graph.W[j] = Uniform(graph.n, u, v, l, r);
+    });
+  });
+}
+
+void AssignWICWeight(Graph& graph) {
+  graph.W = sequence<float>(graph.m);
+  parallel_for(0, graph.n, [&](size_t u) {
+    parallel_for(graph.offset[u], graph.offset[u + 1], [&](size_t j) {
+      auto v = graph.E[j];
+      auto deg_u = graph.offset[u + 1] - graph.offset[u];
+      auto deg_v = graph.offset[v + 1] - graph.offset[v];
+      graph.W[j] = 2.0 / (deg_u + deg_v);
+    });
+  });
+}
+
 void AssignIndegreeWeightSym(Graph &graph){
   graph.W = sequence<float>(graph.m);
   parallel_for(0, graph.n, [&](size_t i){

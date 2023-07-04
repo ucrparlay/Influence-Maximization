@@ -4,6 +4,7 @@
 #include <climits>
 #include <cstring>
 #include <iostream>
+#include <numeric>
 using namespace std;
 using namespace parlay;
 constexpr int BLOCK_SIZE = 1024;

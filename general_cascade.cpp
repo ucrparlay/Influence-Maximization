@@ -57,6 +57,8 @@ int main(int argc, char* argv[]) {
   auto graph = read_graph(graph_file);
   float w = P.getOptionDouble("-w", 0.02);
   AssignUniWeight(graph, w);
+  // AssignUniformRandomWeight(graph, 0, 0.1);
+  // AssignWICWeight(graph);
   int num_iter = P.getOptionInt("-i", 20000);
   int k = P.getOptionInt("-k", 100);
   cout << "Evaluating seeds,  n: " << graph.n << " m: " << graph.m
