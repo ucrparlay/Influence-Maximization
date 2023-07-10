@@ -17,8 +17,10 @@ int main(int argc, char* argv[]) {
   float w = P.getOptionDouble("-w", 0.02);
   float compact = P.getOptionDouble("-compact", 1.0);
   Graph graph = read_graph(file);
-  AssignUniWeight(graph, w);
-  cout << "n: " << graph.n << " m: " << graph.m << " w: " << w << " R: " << R
+  // AssignUniWeight(graph, w);
+  AssignUniformRandomWeight(graph, 0 ,0.1);
+  // AssignWICWeight(graph);
+  cout << "n: " << graph.n << " m: " << graph.m << " w: " << "unif(0,0.1)" << " R: " << R
        << " k: " << k << endl;
 #if defined(MEM)
   cout << "**size of graph is "
