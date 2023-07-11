@@ -31,7 +31,7 @@ if __name__ == '__main__':
         if (w = 0.2):
             u = 0.1
         for compact in [1, 0.1]:
-            cmd = f'{IM} {graph_file} -k {k} -R {R} -u {u} -compact {compact} >> {seeds_file}'
+            cmd = f'{IM} {graph_file} -k {k} -R {R} -UNIF {u} -compact {compact} >> {seeds_file}'
             print(f'Seeds saved to {seeds_file}')
         # subprocess.call(cmd, shell=True)
             subprocess.call(

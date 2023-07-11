@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
   size_t k = P.getOptionInt("-k", 100);
   size_t R = P.getOptionInt("-R", 256);
   double w = P.getOptionDouble("-UIC", 0.0);
-  double u = P.getOptionDouble("-u", -1.0);
+  double u = P.getOptionDouble("-UNIF", -1.0);
   bool WIC = P.getOption("-WIC");
   float compact = P.getOptionDouble("-compact", 1.0);
   printf("w: %f u: %f WIC: %d k: %d R: %d compact: %f\n", w, u, WIC, k, R, compact);
