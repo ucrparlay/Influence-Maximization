@@ -24,12 +24,22 @@ if __name__ == '__main__':
         seeds_file = f'{CURRENT_DIR}/../logs/{graph}.txt'
         mem_file = f'{CURRENT_DIR}/../logs/{graph}_mem.txt'
         print(f'\nRunning IM on {graph_file}')
-        cmd = f'{IM} {graph_file} -k {k} -R {R} -w {w} -compact {compact} > {seeds_file}'
-        # subprocess.call(cmd, shell=True)
         
-        subprocess.call(
+        # test uniform distribution
+        if (w = 0.02):
+            u = 0
+        if (w = 0.2):
+            u = 0.1
+        for compact in [1, 0.1]:
+            cmd = f'{IM} {graph_file} -k {k} -R {R} -u {u} -compact {compact} >> {seeds_file}'
+            print(f'Seeds saved to {seeds_file}')
+        # subprocess.call(cmd, shell=True)
+            subprocess.call(
         f'/usr/bin/time -v numactl -i all {cmd} 2>> {mem_file}', shell=True)
-        print(f'Seeds saved to {seeds_file}')
+        for compact in [1, 0.1]:
+            cmd = f'{IM} {graph_file} -k {k} -R {R} -WIC -compact {compact} >> {seeds_file}'
+            print(f'Seeds saved to {seeds_file}')
+        
 
-        cmd = f'{general_cascade} {graph_file} {seeds_file} -w {w} -k {k} -i 20000'
+        # cmd = f'{general_cascade} {graph_file} {seeds_file} -w {w} -k {k} -i 20000'
         # subprocess.call(cmd, shell=True)

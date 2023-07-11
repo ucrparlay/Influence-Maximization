@@ -150,14 +150,14 @@ void CompactInfluenceMaximizer::init_sketches() {
       center_id[i] = 1;
     }
   });
-  cout << "fill is_center, center_id time " << tt.stop() << endl;
+  // cout << "fill is_center, center_id time " << tt.stop() << endl;
   tt.start();
   center_cnt = parlay::scan_inplace(center_id);
-  cout << "scan_inplace time "<< tt.stop() << endl;
+  // cout << "scan_inplace time "<< tt.stop() << endl;
   tt.start();
 
   sketches = sequence(R, sequence<NodeId>(center_cnt));
-  cout << "allocate sequence of sequence time " << tt.stop() << endl;
+  // cout << "allocate sequence of sequence time " << tt.stop() << endl;
   tt.start();
   #if defined(MEM)
   // cout << "**size of sketches is " << (sizeof(NodeId)*center_cnt)*R << endl;
@@ -169,7 +169,7 @@ void CompactInfluenceMaximizer::init_sketches() {
                                         find_atomic_halve>(find, splice);
   sequence<NodeId> label(n);
   sequence<pair<NodeId, NodeId>> belong(n);
-  cout << "allocate label, belong time " << tt.stop() << endl;
+  // cout << "allocate label, belong time " << tt.stop() << endl;
   tt.start();
   #if defined(MEM)
   // cout << "--size of label is " << sizeof(NodeId)*n << endl;
