@@ -51,22 +51,12 @@ int main(int argc, char* argv[]) {
   compact = P.getOptionDouble("-compact", 1.0);
   cout << "compact " << compact << endl;
   // tt.start();
-  CompactInfluenceMaximizer compact_IM_solver(graph, compact, R);
+  
   // compact_IM_solver.init_sketches();
   // double sketch_time = tt.stop();
   // cout << "sketch construction time: " << sketch_time << endl;
   // tt.start();
 
-  
-  auto select_seeds = [&](int k){
-    if (P.getOption("-Q")) {
-      return compact_IM_solver.select_seeds_prioQ(k);
-    } else if (P.getOption("-PAM")) {
-      return compact_IM_solver.select_seeds_PAM(k);
-    } else {
-      return compact_IM_solver.select_seeds(k);
-    }
-  };
   
   double sketch_time, select_time, total_time=0;
   int t = P.getOptionInt("-t", 3);
@@ -76,10 +66,20 @@ int main(int argc, char* argv[]) {
 
   for (int i = 0;i<t; i++){
     IM_tt.start();
+    CompactInfluenceMaximizer compact_IM_solver(graph, compact, R);
     compact_IM_solver.init_sketches();
     temp_time = IM_tt.stop();
     printf("round %d: sketch time %f \n", i+1, temp_time);
     sketch_time += temp_time;
+    auto select_seeds = [&](int k){
+      if (P.getOption("-Q")) {
+        return compact_IM_solver.select_seeds_prioQ(k);
+      } else if (P.getOption("-PAM")) {
+        return compact_IM_solver.select_seeds_PAM(k);
+      } else {
+        return compact_IM_solver.select_seeds(k);
+      }
+    };
     IM_tt.start();
     seeds = select_seeds(k);
     temp_time = IM_tt.stop();
