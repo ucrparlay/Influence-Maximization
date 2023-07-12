@@ -13,7 +13,7 @@ This repository contains code for our paper "Fast and Space-Efficient Parallel A
 
 Code download:
 ```
-git clone --recurse-submodules git@github.com:ucrparlay/Influence-Maxmization.git
+git clone --recurse-submodules git@github.com:ucrparlay/Influence-Maximization.git
 ```
 
 We provide 5 small graphs as examples. They are located in `./data`. Run the following commands to get started quickly:

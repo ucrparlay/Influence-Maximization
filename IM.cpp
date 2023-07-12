@@ -4,6 +4,9 @@
 #include "get_time.hpp"
 #include "parseCommandLine.hpp"
 
+
+
+
 int main(int argc, char* argv[]) {
   cout << "num_workers: " << parlay::num_workers() << endl;
   CommandLine P(argc, argv);
@@ -53,18 +56,24 @@ int main(int argc, char* argv[]) {
   // double sketch_time = tt.stop();
   // cout << "sketch construction time: " << sketch_time << endl;
   // tt.start();
-  sequence<pair<NodeId, float>> seeds;
-  // if (P.getOption("-Q")) {
-  //   seeds = compact_IM_solver.select_seeds_prioQ(k);
-  // } else if (P.getOption("-PAM")) {
-  //   seeds = compact_IM_solver.select_seeds_PAM(k);
-  // } else {
-  //   seeds = compact_IM_solver.select_seeds(k);
-  // }
+
+  
+  auto select_seeds = [&](int k){
+    if (P.getOption("-Q")) {
+      return compact_IM_solver.select_seeds_prioQ(k);
+    } else if (P.getOption("-PAM")) {
+      return compact_IM_solver.select_seeds_PAM(k);
+    } else {
+      return compact_IM_solver.select_seeds(k);
+    }
+  };
+  
   double sketch_time, select_time, total_time=0;
-  int t = 3;
+  int t = P.getOptionInt("-t", 3);
   double temp_time;
   timer IM_tt;
+  sequence<pair<NodeId, float>> seeds;
+
   for (int i = 0;i<t; i++){
     IM_tt.start();
     compact_IM_solver.init_sketches();
@@ -72,13 +81,7 @@ int main(int argc, char* argv[]) {
     printf("round %d: sketch time %f \n", i+1, temp_time);
     sketch_time += temp_time;
     IM_tt.start();
-    if (P.getOption("-Q")) {
-      seeds = compact_IM_solver.select_seeds_prioQ(k);
-    } else if (P.getOption("-PAM")) {
-      seeds = compact_IM_solver.select_seeds_PAM(k);
-    } else {
-      seeds = compact_IM_solver.select_seeds(k);
-    }
+    seeds = select_seeds(k);
     temp_time = IM_tt.stop();
     printf("round %d: select time %f \n", i+1, temp_time);
     select_time += temp_time;
