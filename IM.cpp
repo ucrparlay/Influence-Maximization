@@ -22,26 +22,20 @@ int main(int argc, char* argv[]) {
   size_t k = P.getOptionInt("-k", 100);
   size_t R = P.getOptionInt("-R", 256);
   double w = P.getOptionDouble("-UIC", 0.0);
-  double u = P.getOptionDouble("-UNIF", -1.0);
+  double u1 = P.getOptionDouble("-ua", 1.0);
+  double u2 = P.getOptionDouble("-ub", 1.0);
   bool WIC = P.getOption("-WIC");
   float compact = P.getOptionDouble("-compact", 1.0);
-  printf("w: %f u: %f WIC: %d k: %d R: %d compact: %f\n", w, u, WIC, k, R, compact);
+  printf("w: %f ua: %f ub: %f WIC: %d k: %d R: %d compact: %f\n", w, u1, u2, WIC, k, R, compact);
   Graph graph = read_graph(file);
   if (w!=0)  AssignUniWeight(graph, w);
-  else if (u!= -1) AssignUniformRandomWeight(graph, u ,u+0.1);
+  else if (u2!= 1) AssignUniformRandomWeight(graph, u1 ,u2);
   else if (WIC) AssignWICWeight(graph);
   else {
     cout << "no weight assginment specified. -w [float] for uni weight, -u [float] for uniform (float, float+0.1) -WIC for WIC_SYM" << endl;
     return 1;
   }
-  // 
-  cout << "n: " << graph.n << " m: " << graph.m;
-  if (w!=0) cout << " weight " << w;
-  else if (u != -1) cout << " uniform(" << u << "," << u+0.1<<")";
-  else if (WIC) cout << "WIC_SYM";
-  
-  cout << " R: " << R
-       << " k: " << k << endl;
+
 #if defined(MEM)
   cout << "**size of graph is "
        << sizeof(graph) + (sizeof(NodeId) + sizeof(float)) * graph.m +
@@ -49,7 +43,7 @@ int main(int argc, char* argv[]) {
        << endl;
 #endif
   compact = P.getOptionDouble("-compact", 1.0);
-  cout << "compact " << compact << endl;
+  // cout << "compact " << compact << endl;
   // tt.start();
   
   // compact_IM_solver.init_sketches();
@@ -64,12 +58,13 @@ int main(int argc, char* argv[]) {
   timer IM_tt;
   sequence<pair<NodeId, float>> seeds;
 
-  for (int i = 0;i<t; i++){
+  for (int i = 0;i<t+1; i++){
     IM_tt.start();
     CompactInfluenceMaximizer compact_IM_solver(graph, compact, R);
     compact_IM_solver.init_sketches();
     temp_time = IM_tt.stop();
-    printf("round %d: sketch time %f \n", i+1, temp_time);
+    printf("round %d \n", i);
+    printf("    sketch time %f \n", temp_time);
     sketch_time += temp_time;
     auto select_seeds = [&](int k){
       if (P.getOption("-Q")) {
@@ -83,13 +78,17 @@ int main(int argc, char* argv[]) {
     IM_tt.start();
     seeds = select_seeds(k);
     temp_time = IM_tt.stop();
-    printf("round %d: select time %f \n", i+1, temp_time);
+    printf("    select time %f \n", temp_time);
     select_time += temp_time;
+    if (i == 0){
+      select_time = 0; sketch_time=0;
+      IM_tt.reset();
+    }
   }
   total_time = IM_tt.get_total();
-  cout << "sketch construction time: " << sketch_time/t << endl;
-  cout << "seed selection time: " << select_time/t << endl;
-  cout << "total time: " << total_time/t << endl;
+  cout << "average sketch construction time: " << sketch_time/t << endl;
+  cout << "average seed selection time: " << select_time/t << endl;
+  cout << "average total time: " << total_time/t << endl;
   cout << "seeds: ";
   for (auto s : seeds) cout << s.first << ' ';
   cout << endl;

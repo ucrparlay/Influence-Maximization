@@ -26,19 +26,23 @@ if __name__ == '__main__':
         print(f'\nRunning IM on {graph_file}')
         
         # test uniform distribution
-        if (w = 0.02):
-            u = 0
-        if (w = 0.2):
-            u = 0.1
+        if (w == 0.02):
+            u1 = 0
+            u2=0.1
+        if (w == 0.2):
+            u1 = 0.1
+            u2 = 0.3
         for compact in [1, 0.1]:
-            cmd = f'{IM} {graph_file} -k {k} -R {R} -UNIF {u} -compact {compact} >> {seeds_file}'
+            cmd = f'{IM} {graph_file} -k {k} -R {R} -ua {u1} -ub {u2} -compact {compact} -t 3 >> {seeds_file}'
             print(f'Seeds saved to {seeds_file}')
         # subprocess.call(cmd, shell=True)
             subprocess.call(
-        f'/usr/bin/time -v numactl -i all {cmd} 2>> {mem_file}', shell=True)
+            f'/usr/bin/time -v numactl -i all {cmd} 2>> {mem_file}', shell=True)
         for compact in [1, 0.1]:
-            cmd = f'{IM} {graph_file} -k {k} -R {R} -WIC -compact {compact} >> {seeds_file}'
+            cmd = f'{IM} {graph_file} -k {k} -R {R} -WIC -compact {compact} -t 3 >> {seeds_file}'
             print(f'Seeds saved to {seeds_file}')
+            subprocess.call(
+            f'/usr/bin/time -v numactl -i all {cmd} 2>> {mem_file}', shell=True)
         
 
         # cmd = f'{general_cascade} {graph_file} {seeds_file} -w {w} -k {k} -i 20000'

@@ -71,7 +71,7 @@ class CompactInfluenceMaximizer {
     // where n should be the largest CC size, but here for simplicity, use |V|
     // if the memory usage is dramatically increase, set it to a tighter bound
     queue_size = 2*ceil(1.0/compact_rate)*parlay::log2_up((size_t)n);
-    printf("queue size is %ld\n", queue_size);
+    // printf("queue size is %ld\n", queue_size);
     hash_edges = sequence<Hash_Edge>(R);
     parallel_for(0, R, [&](size_t r) {
       hash_edges[r].hash_graph_id = _hash((EdgeId)r);
