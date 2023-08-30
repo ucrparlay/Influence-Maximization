@@ -55,29 +55,43 @@ int main(int argc, char* argv[]) {
   char* graph_file = argv[1];
   char* seeds_file = argv[2];
   auto graph = read_graph(graph_file);
-  float w = P.getOptionDouble("-w", 0.02);
+  double w = P.getOptionDouble("-UIC", 0.0);
+  double u1 = P.getOptionDouble("-ua", 1.0);
+  double u2 = P.getOptionDouble("-ub", 1.0);
+  bool WIC = P.getOption("-WIC");
+  int seeds_id = P.getOptionInt("-id", 0);
+  cout << graph_file << endl;
+  printf("w: %f ua: %f ub: %f WIC: %d\n", w, u1, u2, WIC);
   // AssignUniWeight(graph, w);
   // AssignUniformRandomWeight(graph, 0, 0.1);
-  AssignWICWeight(graph);
+  // AssignWICWeight(graph);
+  if (w!=0)  AssignUniWeight(graph, w);
+  else if (u2!= 1) AssignUniformRandomWeight(graph, u1 ,u2);
+  else if (WIC) AssignWICWeight(graph);
+  else {
+    cout << "no weight assginment specified. -w [float] for uni weight, -u [float] for uniform (float, float+0.1) -WIC for WIC_SYM" << endl;
+    return 1;
+  }
+
   int num_iter = P.getOptionInt("-i", 20000);
   int k = P.getOptionInt("-k", 100);
-  cout << "Evaluating seeds,  n: " << graph.n << " m: " << graph.m
+  cout << "n: " << graph.n << " m: " << graph.m
        << " iter: " << num_iter << endl;
-  BFS bfs_solver(graph, w);
+  BFS bfs_solver(graph);
   GeneralCascade gc(bfs_solver);
   auto seeds = ReadSeeds(seeds_file);
   im::timer evalute_time;
-  for (size_t i = 0; i < seeds.size(); i++) {
-    sequence<NodeId> seed_i = seeds[i];
-    evalute_time.start();
-    auto res = gc.Run(seed_i.subseq(0, k), num_iter);
-    double eval_time = evalute_time.stop();
-    cout << "evaluation time: " << eval_time << endl;
-    printf("influence: %.5lf\n", res);
-    if (eval_time > 600) {
-      cout << "!!! per evaluation is more than 10min " << endl;
-      break;
-    }
-  }
+  // for (size_t i = 0; i < seeds.size(); i++) {
+  sequence<NodeId> seed_i = seeds[seeds_id];
+  evalute_time.start();
+  auto res = gc.Run(seed_i.subseq(0, k), num_iter);
+  double eval_time = evalute_time.stop();
+  cout << "evaluation time: " << eval_time << endl;
+  printf("influence: %.5lf\n", res);
+  // if (eval_time > 600) {
+  //   cout << "!!! per evaluation is more than 10min " << endl;
+  //   break;
+  // }
+  // }
   return 0;
 }

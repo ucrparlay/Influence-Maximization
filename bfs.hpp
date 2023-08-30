@@ -17,12 +17,12 @@ using namespace std;
 #define hash_edge_id(j,w) (_hash((EdgeId)(rand_seed + j)) < w*UINT_E_MAX)
 class BFS {
  private:
-  Graph graph;
+  Graph& graph;
   sequence<NodeId> front;
   sequence<EdgeId> degree;
   sequence<bool> edge_flag;
   sequence<NodeId> edge_data;
-  float w;
+  // float w;
   
   size_t n_front;
   size_t n;
@@ -37,7 +37,7 @@ class BFS {
   size_t get_n(){return n;}
   size_t get_m(){return graph.m;}
   BFS() = delete;
-  BFS(Graph& G, float _w): graph(G), w(_w) {
+  BFS(Graph& G): graph(G) {
     n = graph.n;
     front = sequence<NodeId>(n);
     degree = sequence<EdgeId>(n + 1);
@@ -122,6 +122,7 @@ size_t BFS::bfs_sequence(const sequence<NodeId>& seeds, Hash_Edge _hash_edge){
     for (auto j = graph.offset[u]; j < graph.offset[u+1]; j++){
       NodeId v = graph.E[j];
       // if (hash_edge(u,v,w) && !dst[v]){
+      float w = graph.W[graph.offset[u]+j];
       if (hash_edge_id(j,w) && !dst[v]){
         dst[v]=true;
         Q.push(v);

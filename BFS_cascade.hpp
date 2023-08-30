@@ -11,9 +11,9 @@ using namespace std;
 
 struct GeneralCascade {
   private:
-    BFS BFS_simulate;
+    BFS& BFS_simulate;
   public:
-  GeneralCascade(BFS _bfs) : BFS_simulate(_bfs) {}
+  GeneralCascade(BFS& _bfs) : BFS_simulate(_bfs) {}
 
   double Run(const parlay::sequence<NodeId>& seeds, int num_iter) {
     cout << seeds.size() << " seeds: ";

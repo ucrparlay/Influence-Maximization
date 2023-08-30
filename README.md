@@ -41,7 +41,7 @@ We use the `.bin` binary graph format from [GBBS](https://github.com/ParAlg/gbbs
 #### Run Influence Maximization
 
 ```
-./IM [graph_file] -k [num_seeds] -R [num_sketches] -w [uic_weight] -compact [alpha]
+./IM [graph_file] -k [num_seeds] -R [num_sketches] -UIC [uic_weight] -compact [alpha]
 ```
 
 #### Evaluate Seeds

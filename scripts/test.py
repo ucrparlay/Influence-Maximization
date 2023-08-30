@@ -9,7 +9,7 @@ R = 256
 # compact = 1.0
 compact = 0.1
 
-if __name__ == '__main__':
+def test_edge_distribution():
     subprocess.call(f'mkdir -p {CURRENT_DIR}/../logs', shell=True)
     IM = f'{CURRENT_DIR}/../IM'
     general_cascade = f'{CURRENT_DIR}/../general_cascade'
@@ -47,3 +47,26 @@ if __name__ == '__main__':
 
         # cmd = f'{general_cascade} {graph_file} {seeds_file} -w {w} -k {k} -i 20000'
         # subprocess.call(cmd, shell=True)
+
+def test_evaluations():
+    IM = f'{CURRENT_DIR}/../IM'
+    outfile=f'{CURRENT_DIR}/../our_log/evaluations.txt'
+    for graph, url, w, GRAPH_DIR in graphs:
+        graph_file = f'{GRAPH_DIR}/{graph}.bin'
+        if not os.path.exists(graph_file):
+            print(f'\nWarning: {graph} does not exists')
+            continue
+        print(f'\nRunning IM on {graph_file}')
+        cmd = f'{IM} {graph_file} -k {k} -R {R} -UIC {w} -compact 1 -t 0 -Q | tee -a {outfile}'
+        subprocess.call(cmd, shell=True)
+
+
+# test_evaluations()
+if __name__ == "__main__":
+    general_cascade = f"{CURRENT_DIR}/../general_cascade"
+    graph='sd_arc_sym'
+    GRAPH_DIR="/ssd0/graphs/links"    
+    cmd1 = f"{general_cascade} {GRAPH_DIR}/{graph}.bin sd_arc1_sym.txt -ua 0 -ub 0.1 -k {100} -i 2000" 
+    cmd2 = f'{general_cascade} {GRAPH_DIR}/sd_arc_sym.bin sd_arc2_sym.txt -WIC -k {100} -i 2000'
+    subprocess.call(cmd1, shell=True)
+    subprocess.call(cmd2, shell=True)

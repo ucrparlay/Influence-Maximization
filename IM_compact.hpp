@@ -593,9 +593,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
   #if defined(BREAKDOWN)
   cout << "construct priority queue time: " << tt.stop() << endl;
   #endif
-  // #if defined(EVAL)
+  #if defined(EVAL)
 	size_t total_tries = 0;
-  // #endif
+  #endif
   size_t tries=0;
   
   timer t_compute;
@@ -623,7 +623,7 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
         }
       });
       #if defined(EVAL)
-        // cout << "re-evaluate: " << tries << endl;
+        cout << "re-evaluate: " << tries << endl;
       #endif
       total_tries+= tries;
       #if defined(SCORE)
