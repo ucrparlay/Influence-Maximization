@@ -2,6 +2,10 @@
 
 This repository contains code for our paper "Fast and Space-Efficient Parallel Algorithms for Influence Maximization".
 
+### Reference
+
+Wang, Letong, Xiangyun Ding, Yan Gu, and Yihan Sun. "Fast and Space-Efficient Parallel Algorithms for Influence Maximization." arXiv preprint arXiv:2311.07554 (2023).
+
 ### Requirements
 
 - Multi-processor linux machine (tested on CentOS 8 and MacOS 13)
@@ -56,7 +60,3 @@ Use the following command to evaluate the seeds with Monte-Carlo simulations:
 ```
 ./general_cascade [graph_file] [seeds_file] -k [num_seeds] -w [uic_weight] -i [num_MCsimulations]
 ```
-
-### Reference
-
-Letong Wang, Xiangyun Ding, Yan Gu and Yihan Sun. Fast and Space-Efficient Parallel Algorithms for Influence Maximization. In submission.
