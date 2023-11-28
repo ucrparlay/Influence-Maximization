@@ -624,8 +624,8 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_prioQ(int 
       });
       #if defined(EVAL)
         cout << "re-evaluate: " << tries << endl;
+        total_tries+= tries;
       #endif
-      total_tries+= tries;
       #if defined(SCORE)
         cout << "scores: "<< seeds[k].second << endl;
       #endif
@@ -675,8 +675,9 @@ sequence<pair<NodeId, float>> CompactInfluenceMaximizer::select_seeds_PAM(int K)
   sequence< NodeId> B(n);
   #if defined(EVAL)
   sequence<bool> B_flag(n);
-  #endif
   size_t total_tries = 0;
+  #endif
+  
   
   tmap::node* res;
   tmap::node* rem;
